@@ -34,7 +34,8 @@ nearby-chat/
 ├── docs/
 │   └── banner.svg
 └── static/
-    └── index.html        the entire frontend
+    ├── index.html        the entire frontend
+    └── favicon.svg, favicon.ico, apple-touch-icon.png    site icons
 ```
 
 ## 💻 Running locally
