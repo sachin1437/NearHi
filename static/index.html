@@ -38,45 +38,43 @@
   .btn-primary { background: var(--ember); color: #241206; font-size: 15px; padding: 13px 30px; }
   .btn-primary:hover { background: #ff8c5f; }
   .btn-ghost { background: transparent; border: 1px solid var(--panel-line); color: var(--paper); font-size: 13px; padding: 8px 18px; }
+  .btn-sm { font-size: 13px; padding: 8px 18px; }
   .btn:disabled { opacity: 0; pointer-events: none; }
+  #skipBtn:disabled { display: none; }
 
   .intro { text-align: center; max-width: 480px; margin: 24px auto 0; }
   .intro-title { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 30px; line-height: 1.25; margin: 0 0 10px; }
   .intro-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 36px; }
 
-  .radius-control { display: flex; align-items: center; gap: 14px; justify-content: space-between; margin-bottom: 30px; font-size: 14px; color: var(--muted); text-align: left; }
-  .radius-control input[type=range] { flex: 1; }
-  #radiusLabel { color: var(--paper); min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+  .radius-control { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 30px; font-size: 14px; color: var(--muted); text-align: left; }
+  .radius-control label { min-width: 52px; }
 
-  input[type=range] {
+  select, input[type=number] {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--paper);
+    background-color: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color-scheme: dark;
+  }
+  select {
+    flex: 1;
+    min-width: 170px;
     -webkit-appearance: none;
     appearance: none;
-    height: 6px;
-    border-radius: 999px;
-    background: linear-gradient(to right, var(--ember) 0%, var(--ember) var(--fill, 0%), var(--panel-line) var(--fill, 0%), var(--panel-line) 100%);
-    outline: none;
     cursor: pointer;
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5L6 6.5L11 1.5' fill='none' stroke='%238B90A0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
   }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 3px solid var(--ember);
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,.4);
-  }
-  input[type=range]::-moz-range-track {
-    height: 6px; border-radius: 999px; background: var(--panel-line);
-  }
-  input[type=range]::-moz-range-progress {
-    height: 6px; border-radius: 999px; background: var(--ember);
-  }
-  input[type=range]::-moz-range-thumb {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--paper); border: 3px solid var(--ember); cursor: pointer;
-  }
-  input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--ember); outline-offset: 2px; }
+  option { background: var(--panel); color: var(--paper); }
+  select:focus-visible, input[type=number]:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .custom-radius { display: flex; align-items: center; gap: 8px; }
+  .custom-radius[hidden] { display: none; }
+  input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
 
   .call { display: none; }
   body.active .call { display: block; }
@@ -127,6 +125,8 @@
 
   @media (max-width: 640px) {
     .call-stage { aspect-ratio: 4 / 5; }
+    .topbar { flex-wrap: wrap; gap: 12px; }
+    .topbar-right { flex-wrap: wrap; justify-content: flex-end; }
   }
 </style>
 </head>
@@ -137,6 +137,7 @@
     <span class="wordmark">TalkToMe</span>
     <div class="topbar-right">
       <span id="status" class="status">Connecting…</span>
+      <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
       <button id="stopBtn" class="btn btn-ghost" disabled>Stop</button>
     </div>
   </div>
@@ -146,9 +147,22 @@
     <p class="intro-sub">Random video and text chat with people within the distance you choose.</p>
 
     <div class="radius-control">
-      <label for="radius">Radius</label>
-      <input type="range" id="radius" min="10" max="50" value="10">
-      <span id="radiusLabel">10 km</span>
+      <label for="radiusSelect">Radius</label>
+      <select id="radiusSelect">
+        <option value="10" selected>10 km</option>
+        <option value="25">25 km</option>
+        <option value="50">50 km</option>
+        <option value="100">100 km</option>
+        <option value="250">250 km</option>
+        <option value="500">500 km</option>
+        <option value="1000">1000 km</option>
+        <option value="anywhere">Anywhere (no limit)</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <span class="custom-radius" id="customWrap" hidden>
+        <input type="number" id="radiusCustom" min="10" max="20000" step="1" value="10" inputmode="numeric" aria-label="Custom radius in kilometers">
+        <span>km</span>
+      </span>
     </div>
 
     <button id="findBtn" class="btn btn-primary">Start talking</button>
@@ -166,7 +180,7 @@
             <span class="ring ring-3"></span>
             <span class="dot"></span>
           </div>
-          <p class="overlay-text">Looking for someone nearby…</p>
+          <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
         </div>
       </div>
       <div class="video-frame pip" id="localFrame">
@@ -188,22 +202,34 @@ const chatEl = document.getElementById('chat');
 const chatInput = document.getElementById('chatInput');
 const findBtn = document.getElementById('findBtn');
 const stopBtn = document.getElementById('stopBtn');
-const radiusInput = document.getElementById('radius');
-const radiusLabel = document.getElementById('radiusLabel');
+const skipBtn = document.getElementById('skipBtn');
+const radiusSelect = document.getElementById('radiusSelect');
+const customWrap = document.getElementById('customWrap');
+const radiusCustom = document.getElementById('radiusCustom');
+const overlayText = document.getElementById('overlayText');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 
-function updateRadiusFill() {
-  const min = Number(radiusInput.min), max = Number(radiusInput.max), val = Number(radiusInput.value);
-  radiusInput.style.setProperty('--fill', ((val - min) / (max - min)) * 100 + '%');
-}
-radiusInput.oninput = () => {
-  radiusLabel.textContent = radiusInput.value + ' km';
-  updateRadiusFill();
+const UNLIMITED_RADIUS_KM = 20050; // more than half the Earth's circumference, i.e. anywhere
+const MIN_RADIUS_KM = 10;
+const MAX_CUSTOM_RADIUS_KM = 20000;
+
+radiusSelect.onchange = () => {
+  customWrap.hidden = radiusSelect.value !== 'custom';
+  if (!customWrap.hidden) radiusCustom.focus();
 };
-updateRadiusFill();
+
+// Radius in km, or null when the custom box holds something unusable.
+function getRadiusKm() {
+  if (radiusSelect.value === 'anywhere') return UNLIMITED_RADIUS_KM;
+  if (radiusSelect.value !== 'custom') return Number(radiusSelect.value);
+  const typed = Number(radiusCustom.value);
+  if (!Number.isFinite(typed) || typed < MIN_RADIUS_KM) return null;
+  return Math.min(typed, MAX_CUSTOM_RADIUS_KM);
+}
 
 let ws, pc, localStream;
+let lastSearch = null; // where and how far we are searching, reused to find the next person
 let ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // fallback until /ice-servers loads
 
 async function loadIceServers() {
@@ -235,6 +261,7 @@ function connect() {
     if (msg.type === 'matched') {
       statusEl.textContent = 'Matched. Say hi!';
       chatInput.disabled = false;
+      skipBtn.disabled = false;
       document.body.classList.add('matched');
       await startPeerConnection(msg.initiator);
     }
@@ -248,8 +275,7 @@ function connect() {
     }
 
     if (msg.type === 'peer_left') {
-      stopEverything();
-      statusEl.textContent = 'They left. Hit "Start talking" to search again.';
+      goBackToSearching('They left. Looking for someone new...');
     }
   };
 }
@@ -283,6 +309,7 @@ async function startPeerConnection(isInitiator) {
 }
 
 async function handleSignal(data) {
+  if (!pc) return; // late message from a connection we already closed
   if (data.sdp) {
     await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
     if (data.sdp.type === 'offer') {
@@ -308,11 +335,34 @@ function stopEverything() {
     localStream = null;
   }
   localVideo.srcObject = null;
+  chatEl.innerHTML = '';
+  lastSearch = null;
   document.body.classList.remove('active', 'matched');
   stopBtn.disabled = true;
+  skipBtn.disabled = true;
+}
+
+function sendFind() {
+  if (lastSearch) ws.send(JSON.stringify({ type: 'find', ...lastSearch }));
+}
+
+// Drop the current person (if any) and go back to searching on the same screen.
+function goBackToSearching(message) {
+  teardownPeer();
+  chatEl.innerHTML = '';
+  document.body.classList.remove('matched');
+  skipBtn.disabled = true;
+  statusEl.textContent = message;
+  sendFind();
 }
 
 findBtn.onclick = () => {
+  const radiusKm = getRadiusKm();
+  if (radiusKm === null) {
+    statusEl.textContent = 'Enter a radius of at least ' + MIN_RADIUS_KM + ' km.';
+    radiusCustom.focus();
+    return;
+  }
   navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
       await ensureLocalStream();
@@ -320,15 +370,13 @@ findBtn.onclick = () => {
       statusEl.textContent = 'Camera and microphone access is required to talk to someone.';
       return;
     }
-    ws.send(JSON.stringify({
-      type: 'find',
-      lat: pos.coords.latitude,
-      lon: pos.coords.longitude,
-      radius_km: Number(radiusInput.value),
-    }));
+    lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
+    sendFind();
+    const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
+    overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
+    statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
     document.body.classList.add('active');
     stopBtn.disabled = false;
-    statusEl.textContent = 'Searching nearby...';
   }, () => {
     statusEl.textContent = 'Location permission is required to match by radius.';
   });
@@ -338,6 +386,11 @@ stopBtn.onclick = () => {
   ws.send(JSON.stringify({ type: 'skip' }));
   stopEverything();
   statusEl.textContent = 'Stopped. Hit "Start talking" to search again.';
+};
+
+skipBtn.onclick = () => {
+  ws.send(JSON.stringify({ type: 'skip' }));
+  goBackToSearching('Skipped. Looking for someone new...');
 };
 
 chatInput.addEventListener('keydown', (e) => {

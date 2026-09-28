@@ -21,9 +21,26 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 WAITING_GEO_KEY = "waiting:geo"        # geo set: user_id -> (lon, lat)
 WAITING_META_PREFIX = "waiting:meta:"  # hash per user_id: radius_km, joined_at
 ROOM_PREFIX = "room:"                  # user_id -> peer_id while paired
+RECENT_PREFIX = "recent:"              # user_id -> set of peers they just skipped or left
+
+MIN_RADIUS_KM = 10
+MAX_RADIUS_KM = 20050                  # more than half the Earth's circumference, i.e. "anywhere"
+RECENT_SKIP_TTL_SECONDS = 60           # don't re-match the same pair right after a skip
 
 app = FastAPI()
 redis_client: Optional["redis.Redis"] = None
+claim_pair_script = None
+
+# Two people searching at the same moment can each find the other in the pool.
+# This script removes both from the pool in one atomic step, and only if both
+# are still there, so exactly one side gets to create the pairing.
+CLAIM_PAIR_LUA = """
+if redis.call('ZSCORE', KEYS[1], ARGV[1]) and redis.call('ZSCORE', KEYS[1], ARGV[2]) then
+  redis.call('ZREM', KEYS[1], ARGV[1], ARGV[2])
+  return 1
+end
+return 0
+"""
 
 # in-process map of user_id -> live websocket. Works for a single backend
 # process. If you scale to multiple workers/instances later, this needs to
@@ -34,8 +51,9 @@ connections: dict[str, WebSocket] = {}
 
 @app.on_event("startup")
 async def startup():
-    global redis_client
+    global redis_client, claim_pair_script
     redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+    claim_pair_script = redis_client.register_script(CLAIM_PAIR_LUA)
 
 
 @app.on_event("shutdown")
@@ -47,6 +65,28 @@ async def shutdown():
 async def remove_from_pool(user_id: str):
     await redis_client.zrem(WAITING_GEO_KEY, user_id)
     await redis_client.delete(WAITING_META_PREFIX + user_id)
+
+
+def clamp_radius(value) -> float:
+    """Server-side radius limits. The UI enforces these too, but a client can
+    send anything over the socket."""
+    try:
+        radius = float(value)
+    except (TypeError, ValueError):
+        return float(MIN_RADIUS_KM)
+    if radius != radius:  # NaN
+        return float(MIN_RADIUS_KM)
+    return max(float(MIN_RADIUS_KM), min(float(MAX_RADIUS_KM), radius))
+
+
+async def claim_pair(a: str, b: str) -> bool:
+    return bool(await claim_pair_script(keys=[WAITING_GEO_KEY], args=[a, b]))
+
+
+async def mark_recent(a: str, b: str):
+    for user, other in ((a, b), (b, a)):
+        await redis_client.sadd(RECENT_PREFIX + user, other)
+        await redis_client.expire(RECENT_PREFIX + user, RECENT_SKIP_TTL_SECONDS)
 
 
 async def find_match(user_id: str, lat: float, lon: float, radius_km: float) -> Optional[str]:
@@ -61,8 +101,9 @@ async def find_match(user_id: str, lat: float, lon: float, radius_km: float) -> 
         sort="ASC",
         withdist=True,
     )
+    recent = await redis_client.smembers(RECENT_PREFIX + user_id)
     for candidate_id, dist in candidates:
-        if candidate_id == user_id:
+        if candidate_id == user_id or candidate_id in recent:
             continue
         meta = await redis_client.hgetall(WAITING_META_PREFIX + candidate_id)
         if not meta:
@@ -113,7 +154,7 @@ async def ws_endpoint(websocket: WebSocket):
             if mtype == "find":
                 lat = float(msg["lat"])
                 lon = float(msg["lon"])
-                radius_km = float(msg.get("radius_km", 5))
+                radius_km = clamp_radius(msg.get("radius_km"))
 
                 await redis_client.geoadd(WAITING_GEO_KEY, (lon, lat, user_id))
                 await redis_client.hset(
@@ -121,12 +162,19 @@ async def ws_endpoint(websocket: WebSocket):
                     mapping={"radius_km": radius_km, "joined_at": time.time()},
                 )
 
-                peer_id = await find_match(user_id, lat, lon, radius_km)
-                if peer_id:
-                    await pair_users(user_id, peer_id)
-                    initiator = user_id < peer_id  # deterministic, both sides agree
-                    await send_to(user_id, {"type": "matched", "peer_id": peer_id, "initiator": initiator})
-                    await send_to(peer_id, {"type": "matched", "peer_id": user_id, "initiator": not initiator})
+                for _ in range(20):
+                    peer_id = await find_match(user_id, lat, lon, radius_km)
+                    if not peer_id:
+                        break  # nobody suitable right now, stay in the pool
+                    if await claim_pair(user_id, peer_id):
+                        await pair_users(user_id, peer_id)
+                        initiator = user_id < peer_id  # deterministic, both sides agree
+                        await send_to(user_id, {"type": "matched", "peer_id": peer_id, "initiator": initiator})
+                        await send_to(peer_id, {"type": "matched", "peer_id": user_id, "initiator": not initiator})
+                        break
+                    if await redis_client.zscore(WAITING_GEO_KEY, user_id) is None:
+                        break  # someone else already paired us, they send the notifications
+                    # otherwise that candidate was taken by someone else, look again
 
             elif mtype in ("chat", "signal"):
                 peer_id = await redis_client.get(ROOM_PREFIX + user_id)
@@ -137,6 +185,7 @@ async def ws_endpoint(websocket: WebSocket):
                 await remove_from_pool(user_id)
                 peer_id = await unpair(user_id)
                 if peer_id:
+                    await mark_recent(user_id, peer_id)
                     await send_to(peer_id, {"type": "peer_left"})
 
     except WebSocketDisconnect:

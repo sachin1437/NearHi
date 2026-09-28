@@ -9,10 +9,12 @@ Random video and text chat with strangers, matched by how close they are to you,
 
 ## 🎯 How it works
 
-- You set a radius (10 to 50 km).
+- You pick a radius: presets from 10 km up to 1000 km, a custom number (10 to 20000 km), or Anywhere.
 - The backend puts you in a waiting pool in Redis, keyed by your location.
 - When someone else is waiting within range of you (and you're within range of them, matching is mutual), you're paired.
 - Video and audio go directly between the two browsers over WebRTC. The server only relays chat text and the WebRTC handshake, not the actual video stream.
+- **Skip** moves you to the next person on the same screen. **Stop** ends everything and turns the camera off. If the person you're talking to leaves or skips you, you automatically go back to searching. The same two people are not paired again for 60 seconds after a skip.
+- Matching is mutual, so Anywhere only matches people whose own radius also reaches you.
 
 ## 🧱 Stack
 
@@ -29,7 +31,6 @@ nearby-chat/
 ├── requirements.txt
 ├── Procfile              tells Railway/Render how to start the app
 ├── .gitignore
-├── test_matching.py      two-client test harness, see Testing below
 ├── docs/
 │   └── banner.svg
 └── static/
@@ -57,17 +58,8 @@ Without the two `TURN_*` variables set, `/ice-servers` just returns Google's pub
 
 Push to GitHub, then on Railway: New Project, deploy from the repo, add a Redis plugin, set `REDIS_URL` to `${{Redis.REDIS_URL}}` in the web service's variables, generate a domain.
 
-## 🧪 Testing
-
-`test_matching.py` spins up two fake clients against a running instance and checks that nearby users match, far-away users don't, and that chat/signaling messages actually relay between paired users. Run it with the server already running locally:
-
-```
-python test_matching.py
-```
-
 ## ⚠️ Known limitations
 
 - **Single process.** The map of live WebSocket connections lives in memory in one process. Scaling to multiple workers or instances needs that moved to something shared (Redis pub/sub) so a message can reach a user connected to a different process.
 - **No content moderation yet.** Neither chat text nor video is screened. This needs to exist before this goes out to real strangers, text moderation first, then periodic video frame checks.
 - **No CSAM detection or reporting pipeline.** This is a legal requirement, not an optional feature, before taking real traffic. Needs a vetted third-party provider (PhotoDNA, Thorn Safer), not a custom detector. Get real legal advice on reporting obligations for your jurisdiction.
-- **Peer disconnect returns you to idle.** If your match leaves, you're dropped back to the start screen (camera off) rather than automatically searching for someone new.
