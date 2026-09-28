@@ -216,6 +216,15 @@ const remoteVideo = document.getElementById('remoteVideo');
 const UNLIMITED_RADIUS_KM = 20050; // more than half the Earth's circumference, i.e. anywhere
 const MIN_RADIUS_KM = 10;
 const MAX_CUSTOM_RADIUS_KM = 20000;
+const PERMISSION_HINT_MS = 20000; // if the browser has not answered by then, tell the user what to look for
+
+// Instagram, Facebook, Snapchat, TikTok, LinkedIn, WeChat and Android WebView browsers
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Snapchat|TikTok|musical_ly|BytedanceWebview|LinkedInApp|MicroMessenger|Twitter|; wv\)/i
+  .test(navigator.userAgent || '');
+const IN_APP_MESSAGE = 'It looks like you opened this inside another app (Instagram, WhatsApp, Facebook and similar). Those built-in browsers often block the camera and location without asking. Open this page in Chrome or Safari instead.';
+const NO_RESPONSE_MESSAGE = 'Still waiting for your browser. Look for a small location or camera icon in the address bar and click Allow. If you opened this link from another app (Instagram, WhatsApp and similar), open it in Chrome or Safari instead.';
+const INSECURE_MESSAGE = 'The camera and location only work on a secure page. Open this site with https:// at the start of the address.';
+const UNSUPPORTED_MESSAGE = 'This browser cannot do video calls. Use a recent version of Chrome, Safari, Edge or Firefox.';
 
 radiusSelect.onchange = () => {
   customWrap.hidden = radiusSelect.value !== 'custom';
@@ -382,6 +391,14 @@ function cameraErrorMessage(err) {
 
 findBtn.onclick = () => {
   startError.hidden = true;
+  if (window.isSecureContext === false) {
+    showStartError(INSECURE_MESSAGE);
+    return;
+  }
+  if (!navigator.geolocation || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
+    showStartError(UNSUPPORTED_MESSAGE);
+    return;
+  }
   const radiusKm = getRadiusKm();
   if (radiusKm === null) {
     showStartError('Enter a radius of at least ' + MIN_RADIUS_KM + ' km.');
@@ -389,15 +406,20 @@ findBtn.onclick = () => {
     return;
   }
   statusEl.textContent = 'Allow location access when your browser asks...';
+  // Some browsers never show the permission prompt and never report an error. Without this the page just sits there.
+  const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
   navigator.geolocation.getCurrentPosition(async (pos) => {
     statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
     try {
       await ensureLocalStream();
     } catch (e) {
+      clearTimeout(hintTimer);
       statusEl.textContent = 'Could not start.';
       showStartError(cameraErrorMessage(e));
       return;
     }
+    clearTimeout(hintTimer);
+    startError.hidden = true;
     lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
     sendFind();
     const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
@@ -406,6 +428,7 @@ findBtn.onclick = () => {
     document.body.classList.add('active');
     stopBtn.disabled = false;
   }, (err) => {
+    clearTimeout(hintTimer);
     statusEl.textContent = 'Could not start.';
     showStartError(locationErrorMessage(err));
   }, { timeout: 15000, maximumAge: 60000 });
@@ -432,6 +455,7 @@ chatInput.addEventListener('keydown', (e) => {
 
 loadIceServers();
 connect();
+if (IN_APP_BROWSER) showStartError(IN_APP_MESSAGE);
 
 // --- PiP: big/small roles are just CSS classes, the underlying video
 // elements (and their srcObject bindings above) never move in the DOM ---
