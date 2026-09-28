@@ -75,6 +75,7 @@
   .custom-radius { display: flex; align-items: center; gap: 8px; }
   .custom-radius[hidden] { display: none; }
   input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
+  .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #ffc9b3; background: rgba(255,122,69,.10); border: 1px solid rgba(255,122,69,.40); border-radius: 12px; }
 
   .call { display: none; }
   body.active .call { display: block; }
@@ -166,6 +167,7 @@
     </div>
 
     <button id="findBtn" class="btn btn-primary">Start talking</button>
+    <p id="startError" class="start-error" role="alert" hidden></p>
   </section>
 
   <section class="call">
@@ -207,6 +209,7 @@ const radiusSelect = document.getElementById('radiusSelect');
 const customWrap = document.getElementById('customWrap');
 const radiusCustom = document.getElementById('radiusCustom');
 const overlayText = document.getElementById('overlayText');
+const startError = document.getElementById('startError');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 
@@ -356,18 +359,43 @@ function goBackToSearching(message) {
   sendFind();
 }
 
+function showStartError(message) {
+  startError.textContent = message;
+  startError.hidden = false;
+}
+
+function locationErrorMessage(err) {
+  if (err && err.code === 1) {
+    return 'Location is blocked for this site. Click the icon at the left of the address bar (or the location icon at the right), set Location to Allow, then reload the page.';
+  }
+  if (err && err.code === 3) {
+    return 'Getting your location took too long. Check your connection and try again.';
+  }
+  return 'Your device could not work out where you are. Turn on Location Services for your browser (on a Mac: System Settings, Privacy & Security, Location Services), then reload and try again.';
+}
+
+function cameraErrorMessage(err) {
+  if (err && err.name === 'NotFoundError') return 'No camera or microphone was found on this device.';
+  if (err && err.name === 'NotReadableError') return 'Your camera is being used by another app or tab. Close it and try again.';
+  return 'Camera or microphone is blocked. Click the icon at the left of the address bar, allow both, then reload the page.';
+}
+
 findBtn.onclick = () => {
+  startError.hidden = true;
   const radiusKm = getRadiusKm();
   if (radiusKm === null) {
-    statusEl.textContent = 'Enter a radius of at least ' + MIN_RADIUS_KM + ' km.';
+    showStartError('Enter a radius of at least ' + MIN_RADIUS_KM + ' km.');
     radiusCustom.focus();
     return;
   }
+  statusEl.textContent = 'Allow location access when your browser asks...';
   navigator.geolocation.getCurrentPosition(async (pos) => {
+    statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
     try {
       await ensureLocalStream();
     } catch (e) {
-      statusEl.textContent = 'Camera and microphone access is required to talk to someone.';
+      statusEl.textContent = 'Could not start.';
+      showStartError(cameraErrorMessage(e));
       return;
     }
     lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
@@ -377,9 +405,10 @@ findBtn.onclick = () => {
     statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
     document.body.classList.add('active');
     stopBtn.disabled = false;
-  }, () => {
-    statusEl.textContent = 'Location permission is required to match by radius.';
-  });
+  }, (err) => {
+    statusEl.textContent = 'Could not start.';
+    showStartError(locationErrorMessage(err));
+  }, { timeout: 15000, maximumAge: 60000 });
 };
 
 stopBtn.onclick = () => {
