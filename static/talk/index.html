@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TalkToMe</title>
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#161B45">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root {
+    --ink: #161B45;
+    --panel: #1F2659;
+    --panel-line: #353E80;
+    --paper: #F4F5FF;
+    --ember: #FF7A45;
+    --ember-dim: #7A3E23;
+    --muted: #AEB4DC;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-optical-sizing: auto;
+    min-height: 100vh;
+  }
+  .app { max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 40px; }
+  .wordmark { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; text-decoration: none; color: inherit; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .status { font-size: 13px; color: var(--muted); }
+
+  .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 500; border-radius: 999px; transition: transform .15s ease, background .15s ease, opacity .2s ease; }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+  .btn-primary { background: var(--ember); color: #241206; font-size: 15px; padding: 13px 30px; }
+  .btn-primary:hover { background: #ff8c5f; }
+  .btn-ghost { background: transparent; border: 1px solid var(--panel-line); color: var(--paper); font-size: 13px; padding: 8px 18px; }
+  .btn-sm { font-size: 13px; padding: 8px 18px; }
+  .btn:disabled { opacity: 0; pointer-events: none; }
+  #skipBtn:disabled { display: none; }
+
+  .intro { text-align: center; max-width: 480px; margin: 24px auto 0; }
+  .intro-title { font-weight: 700; font-size: 36px; line-height: 1.1; letter-spacing: -0.03em; margin: 0 0 12px; text-wrap: balance; }
+  .intro-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 36px; }
+
+  .radius-control { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 30px; font-size: 14px; color: var(--muted); text-align: left; }
+  .radius-control label { min-width: 52px; }
+
+  select, input[type=number] {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--paper);
+    background-color: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color-scheme: dark;
+  }
+  select {
+    flex: 1;
+    min-width: 170px;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5L6 6.5L11 1.5' fill='none' stroke='%23AEB4DC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  option { background: var(--panel); color: var(--paper); }
+  select:focus-visible, input[type=number]:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .custom-radius { display: flex; align-items: center; gap: 8px; }
+  .custom-radius[hidden] { display: none; }
+  input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
+  .age-note { margin: 16px 0 0; font-size: 14px; color: var(--muted); }
+  .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #ffc9b3; background: rgba(255,122,69,.10); border: 1px solid rgba(255,122,69,.40); border-radius: 12px; }
+
+  .call { display: none; }
+  body.active .call { display: block; }
+  body.active .intro { display: none; }
+
+  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: 560px; background: #0E1236; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .video-frame { position: absolute; overflow: hidden; background: #0E1236; user-select: none; }
+  .video-frame video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
+  .video-frame.big { inset: 0; z-index: 1; border-radius: 10px; }
+  .video-frame.pip {
+    width: clamp(96px, 30%, 200px);
+    aspect-ratio: 4 / 3;
+    right: 14px; bottom: 14px;
+    z-index: 2;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.5);
+    cursor: grab;
+    touch-action: none;
+  }
+  .video-frame.pip:active { cursor: grabbing; }
+  .video-label { position: absolute; left: 10px; bottom: 8px; font-size: 12px; background: rgba(0,0,0,.45); padding: 3px 9px; border-radius: 999px; z-index: 3; pointer-events: none; }
+
+  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(14,18,54,.88); }
+  body.matched .radar-overlay { display: none; }
+  .radar { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
+  .radar .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ember); }
+  .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ember-dim); opacity: 0; }
+  body.active:not(.matched) .radar .ring { animation: ripple 2.4s ease-out infinite; }
+  body.active:not(.matched) .radar .ring-2 { animation-delay: .8s; }
+  body.active:not(.matched) .radar .ring-3 { animation-delay: 1.6s; }
+  @keyframes ripple {
+    0% { transform: scale(0.5); opacity: .55; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.active:not(.matched) .radar .ring { animation: none; opacity: .35; }
+  }
+  .overlay-text { font-size: 13px; color: var(--muted); }
+
+  .chatbox { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 20px; overflow: hidden; }
+  .chat-log { height: 160px; overflow-y: auto; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+  .chat-log div { margin-bottom: 4px; }
+  .chat-input { width: 100%; border: none; border-top: 1px solid var(--panel-line); background: transparent; color: var(--paper); font-family: inherit; font-size: 14px; padding: 12px 16px; }
+  .chat-input::placeholder { color: var(--muted); }
+  .chat-input:focus { outline: none; }
+  .chat-input:disabled { opacity: .4; }
+
+  @media (max-width: 640px) {
+    .call-stage { aspect-ratio: 4 / 5; }
+    .topbar { flex-wrap: wrap; gap: 12px; }
+    .topbar-right { flex-wrap: wrap; justify-content: flex-end; }
+  }
+</style>
+</head>
+<body class="idle">
+<div class="app">
+
+  <div class="topbar">
+    <a class="wordmark" href="/" aria-label="TalkToMe home">TalkToMe</a>
+    <div class="topbar-right">
+      <span id="status" class="status">Connecting…</span>
+      <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
+      <button id="stopBtn" class="btn btn-ghost" disabled>Stop</button>
+    </div>
+  </div>
+
+  <section class="intro">
+    <h1 class="intro-title">Find someone nearby to talk to</h1>
+    <p class="intro-sub">Random video and text chat with people within the distance you choose.</p>
+
+    <div class="radius-control">
+      <label for="radiusSelect">Radius</label>
+      <select id="radiusSelect">
+        <option value="10" selected>10 km</option>
+        <option value="25">25 km</option>
+        <option value="50">50 km</option>
+        <option value="100">100 km</option>
+        <option value="250">250 km</option>
+        <option value="500">500 km</option>
+        <option value="1000">1000 km</option>
+        <option value="anywhere">Anywhere (no limit)</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <span class="custom-radius" id="customWrap" hidden>
+        <input type="number" id="radiusCustom" min="10" max="20000" step="1" value="10" inputmode="numeric" aria-label="Custom radius in kilometers">
+        <span>km</span>
+      </span>
+    </div>
+
+    <button id="findBtn" class="btn btn-primary">Start talking</button>
+    <p class="age-note">18+ only. By starting, you confirm you are an adult.</p>
+    <p id="startError" class="start-error" role="alert" hidden></p>
+  </section>
+
+  <section class="call">
+    <div class="call-stage" id="callStage">
+      <div class="video-frame big" id="remoteFrame">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <span class="video-label">Stranger</span>
+        <div class="radar-overlay" aria-hidden="true">
+          <div class="radar">
+            <span class="ring ring-1"></span>
+            <span class="ring ring-2"></span>
+            <span class="ring ring-3"></span>
+            <span class="dot"></span>
+          </div>
+          <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
+        </div>
+      </div>
+      <div class="video-frame pip" id="localFrame">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <span class="video-label">You</span>
+      </div>
+    </div>
+    <div class="chatbox">
+      <div id="chat" class="chat-log"></div>
+      <input id="chatInput" class="chat-input" placeholder="Type a message and hit enter" disabled>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const chatEl = document.getElementById('chat');
+const chatInput = document.getElementById('chatInput');
+const findBtn = document.getElementById('findBtn');
+const stopBtn = document.getElementById('stopBtn');
+const skipBtn = document.getElementById('skipBtn');
+const radiusSelect = document.getElementById('radiusSelect');
+const customWrap = document.getElementById('customWrap');
+const radiusCustom = document.getElementById('radiusCustom');
+const overlayText = document.getElementById('overlayText');
+const startError = document.getElementById('startError');
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+
+const UNLIMITED_RADIUS_KM = 20050; // more than half the Earth's circumference, i.e. anywhere
+const MIN_RADIUS_KM = 10;
+const MAX_CUSTOM_RADIUS_KM = 20000;
+const PERMISSION_HINT_MS = 20000; // if the browser has not answered by then, tell the user what to look for
+
+// Instagram, Facebook, Snapchat, TikTok, LinkedIn, WeChat and Android WebView browsers
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Snapchat|TikTok|musical_ly|BytedanceWebview|LinkedInApp|MicroMessenger|Twitter|; wv\)/i
+  .test(navigator.userAgent || '');
+const IN_APP_MESSAGE = 'It looks like you opened this inside another app (Instagram, WhatsApp, Facebook and similar). Those built-in browsers often block the camera and location without asking. Open this page in Chrome or Safari instead.';
+const NO_RESPONSE_MESSAGE = 'Still waiting for your browser. Look for a small location or camera icon in the address bar and click Allow. If you opened this link from another app (Instagram, WhatsApp and similar), open it in Chrome or Safari instead.';
+const INSECURE_MESSAGE = 'The camera and location only work on a secure page. Open this site with https:// at the start of the address.';
+const UNSUPPORTED_MESSAGE = 'This browser cannot do video calls. Use a recent version of Chrome, Safari, Edge or Firefox.';
+
+radiusSelect.onchange = () => {
+  customWrap.hidden = radiusSelect.value !== 'custom';
+  if (!customWrap.hidden) radiusCustom.focus();
+};
+
+// Radius in km, or null when the custom box holds something unusable.
+function getRadiusKm() {
+  if (radiusSelect.value === 'anywhere') return UNLIMITED_RADIUS_KM;
+  if (radiusSelect.value !== 'custom') return Number(radiusSelect.value);
+  const typed = Number(radiusCustom.value);
+  if (!Number.isFinite(typed) || typed < MIN_RADIUS_KM) return null;
+  return Math.min(typed, MAX_CUSTOM_RADIUS_KM);
+}
+
+let ws, pc, localStream;
+let lastSearch = null; // where and how far we are searching, reused to find the next person
+let ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // fallback until /ice-servers loads
+
+async function loadIceServers() {
+  try {
+    const res = await fetch('/ice-servers');
+    const servers = await res.json();
+    if (Array.isArray(servers) && servers.length) ICE_SERVERS = servers;
+  } catch (e) {
+    // keep the STUN-only fallback above
+  }
+}
+
+function log(msg) {
+  const div = document.createElement('div');
+  div.textContent = msg;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+
+  ws.onopen = () => { statusEl.textContent = 'Connected. Hit "Start talking" when you\'re ready.'; };
+  ws.onclose = () => { statusEl.textContent = 'Disconnected from server.'; };
+
+  ws.onmessage = async (event) => {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === 'matched') {
+      statusEl.textContent = 'Matched. Say hi!';
+      chatInput.disabled = false;
+      skipBtn.disabled = false;
+      document.body.classList.add('matched');
+      await startPeerConnection(msg.initiator);
+    }
+
+    if (msg.type === 'signal') {
+      await handleSignal(msg.data);
+    }
+
+    if (msg.type === 'chat') {
+      log('Stranger: ' + msg.data);
+    }
+
+    if (msg.type === 'peer_left') {
+      goBackToSearching('They left. Looking for someone new...');
+    }
+  };
+}
+
+async function ensureLocalStream() {
+  if (!localStream) {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+  }
+}
+
+async function startPeerConnection(isInitiator) {
+  pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+  await ensureLocalStream();
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+  pc.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      ws.send(JSON.stringify({ type: 'signal', data: { candidate: event.candidate } }));
+    }
+  };
+
+  if (isInitiator) {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({ type: 'signal', data: { sdp: offer } }));
+  }
+}
+
+async function handleSignal(data) {
+  if (!pc) return; // late message from a connection we already closed
+  if (data.sdp) {
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    if (data.sdp.type === 'offer') {
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({ type: 'signal', data: { sdp: answer } }));
+    }
+  } else if (data.candidate) {
+    try { await pc.addIceCandidate(data.candidate); } catch (e) { /* ignore late candidates */ }
+  }
+}
+
+function teardownPeer() {
+  if (pc) { pc.close(); pc = null; }
+  remoteVideo.srcObject = null;
+  chatInput.disabled = true;
+}
+
+function stopEverything() {
+  teardownPeer();
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  localVideo.srcObject = null;
+  chatEl.innerHTML = '';
+  lastSearch = null;
+  document.body.classList.remove('active', 'matched');
+  stopBtn.disabled = true;
+  skipBtn.disabled = true;
+}
+
+function sendFind() {
+  if (lastSearch) ws.send(JSON.stringify({ type: 'find', ...lastSearch }));
+}
+
+// Drop the current person (if any) and go back to searching on the same screen.
+function goBackToSearching(message) {
+  teardownPeer();
+  chatEl.innerHTML = '';
+  document.body.classList.remove('matched');
+  skipBtn.disabled = true;
+  statusEl.textContent = message;
+  sendFind();
+}
+
+function showStartError(message) {
+  startError.textContent = message;
+  startError.hidden = false;
+}
+
+function locationErrorMessage(err) {
+  if (err && err.code === 1) {
+    return 'Location is blocked for this site. Click the icon at the left of the address bar (or the location icon at the right), set Location to Allow, then reload the page.';
+  }
+  if (err && err.code === 3) {
+    return 'Getting your location took too long. Check your connection and try again.';
+  }
+  return 'Your device could not work out where you are. Turn on Location Services for your browser (on a Mac: System Settings, Privacy & Security, Location Services), then reload and try again.';
+}
+
+function cameraErrorMessage(err) {
+  if (err && err.name === 'NotFoundError') return 'No camera or microphone was found on this device.';
+  if (err && err.name === 'NotReadableError') return 'Your camera is being used by another app or tab. Close it and try again.';
+  return 'Camera or microphone is blocked. Click the icon at the left of the address bar, allow both, then reload the page.';
+}
+
+findBtn.onclick = () => {
+  startError.hidden = true;
+  if (window.isSecureContext === false) {
+    showStartError(INSECURE_MESSAGE);
+    return;
+  }
+  if (!navigator.geolocation || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
+    showStartError(UNSUPPORTED_MESSAGE);
+    return;
+  }
+  const radiusKm = getRadiusKm();
+  if (radiusKm === null) {
+    showStartError('Enter a radius of at least ' + MIN_RADIUS_KM + ' km.');
+    radiusCustom.focus();
+    return;
+  }
+  statusEl.textContent = 'Allow location access when your browser asks...';
+  // Some browsers never show the permission prompt and never report an error. Without this the page just sits there.
+  const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
+    try {
+      await ensureLocalStream();
+    } catch (e) {
+      clearTimeout(hintTimer);
+      statusEl.textContent = 'Could not start.';
+      showStartError(cameraErrorMessage(e));
+      return;
+    }
+    clearTimeout(hintTimer);
+    startError.hidden = true;
+    lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
+    sendFind();
+    const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
+    overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
+    statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
+    document.body.classList.add('active');
+    stopBtn.disabled = false;
+  }, (err) => {
+    clearTimeout(hintTimer);
+    statusEl.textContent = 'Could not start.';
+    showStartError(locationErrorMessage(err));
+  }, { timeout: 15000, maximumAge: 60000 });
+};
+
+stopBtn.onclick = () => {
+  ws.send(JSON.stringify({ type: 'skip' }));
+  stopEverything();
+  statusEl.textContent = 'Stopped. Hit "Start talking" to search again.';
+};
+
+skipBtn.onclick = () => {
+  ws.send(JSON.stringify({ type: 'skip' }));
+  goBackToSearching('Skipped. Looking for someone new...');
+};
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && chatInput.value.trim()) {
+    ws.send(JSON.stringify({ type: 'chat', data: chatInput.value }));
+    log('You: ' + chatInput.value);
+    chatInput.value = '';
+  }
+});
+
+loadIceServers();
+connect();
+if (IN_APP_BROWSER) showStartError(IN_APP_MESSAGE);
+
+// --- PiP: big/small roles are just CSS classes, the underlying video
+// elements (and their srcObject bindings above) never move in the DOM ---
+const callStage = document.getElementById('callStage');
+const remoteFrame = document.getElementById('remoteFrame');
+const localFrame = document.getElementById('localFrame');
+let swapped = false;
+
+function clearManualPosition(frame) {
+  frame.style.left = '';
+  frame.style.top = '';
+  frame.style.right = '';
+  frame.style.bottom = '';
+}
+
+function applyRoles() {
+  const [bigFrame, pipFrame] = swapped ? [localFrame, remoteFrame] : [remoteFrame, localFrame];
+  clearManualPosition(bigFrame);
+  clearManualPosition(pipFrame);
+  bigFrame.classList.add('big');
+  bigFrame.classList.remove('pip');
+  pipFrame.classList.add('pip');
+  pipFrame.classList.remove('big');
+}
+applyRoles();
+
+let dragFrame = null, dragged = false, pointerStartX = 0, pointerStartY = 0, frameStartX = 0, frameStartY = 0;
+
+function onPipPointerDown(e) {
+  const frame = e.currentTarget;
+  if (!frame.classList.contains('pip')) return; // only the small floating view can be moved
+  dragFrame = frame;
+  dragged = false;
+  const stageRect = callStage.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  frameStartX = frameRect.left - stageRect.left;
+  frameStartY = frameRect.top - stageRect.top;
+  pointerStartX = e.clientX;
+  pointerStartY = e.clientY;
+  frame.setPointerCapture(e.pointerId);
+}
+
+function onPipPointerMove(e) {
+  if (!dragFrame) return;
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragged = true;
+  if (!dragged) return;
+  const stageRect = callStage.getBoundingClientRect();
+  const frameRect = dragFrame.getBoundingClientRect();
+  const maxX = stageRect.width - frameRect.width;
+  const maxY = stageRect.height - frameRect.height;
+  dragFrame.style.left = Math.max(0, Math.min(frameStartX + dx, maxX)) + 'px';
+  dragFrame.style.top = Math.max(0, Math.min(frameStartY + dy, maxY)) + 'px';
+  dragFrame.style.right = 'auto';
+  dragFrame.style.bottom = 'auto';
+}
+
+function onPipPointerUp() {
+  if (!dragFrame) return;
+  const wasDragged = dragged;
+  dragFrame = null;
+  if (!wasDragged) {
+    swapped = !swapped;
+    applyRoles();
+  }
+}
+
+[remoteFrame, localFrame].forEach((frame) => {
+  frame.addEventListener('pointerdown', onPipPointerDown);
+  frame.addEventListener('pointermove', onPipPointerMove);
+  frame.addEventListener('pointerup', onPipPointerUp);
+  frame.addEventListener('pointercancel', onPipPointerUp);
+});
+</script>
+</body>
+</html>

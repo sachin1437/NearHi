@@ -7,6 +7,7 @@ from typing import Optional
 import httpx
 import redis.asyncio as redis
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 # Set these once you sign up with a TURN provider (e.g. metered.ca). Until
@@ -214,6 +215,12 @@ async def ice_servers():
         # if the TURN provider is unreachable, fail back to STUN-only
         # rather than breaking the whole app
         return [{"urls": "stun:stun.l.google.com:19302"}]
+
+
+@app.get("/talk")
+async def talk_redirect():
+    # relative redirect, so it keeps whatever scheme and host the visitor used
+    return RedirectResponse("/talk/")
 
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

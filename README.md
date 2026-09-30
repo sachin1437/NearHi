@@ -21,7 +21,7 @@ Random video and text chat with strangers, matched by how close they are to you,
 - **Backend:** FastAPI, one WebSocket endpoint handling matching, chat relay, and WebRTC signaling relay.
 - **Matching:** Redis geo commands (`GEOADD` / `GEOSEARCH`), sub-millisecond radius lookups.
 - **Video:** WebRTC, STUN by default (Google's public server), TURN pluggable via a `/ice-servers` endpoint for networks where direct P2P fails.
-- **Frontend:** one HTML file, no framework, no build step.
+- **Frontend:** a landing page at `/` and the chat app at `/talk/`. Plain HTML, CSS and JavaScript, no framework, no build step. The font (Bricolage Grotesque, Open Font License) is self-hosted.
 
 ## 📁 Project structure
 
@@ -34,7 +34,12 @@ nearby-chat/
 ├── docs/
 │   └── banner.svg
 └── static/
-    ├── index.html        the entire frontend
+    ├── index.html        landing page, served at /
+    ├── talk/
+    │   └── index.html    the chat app, served at /talk/
+    ├── fonts/            self-hosted font, its stylesheet and licence
+    ├── topo.svg          map artwork used on the landing page
+    ├── og-image.png      preview image shown when the link is shared
     └── favicon.svg, favicon.ico, apple-touch-icon.png    site icons
 ```
 
