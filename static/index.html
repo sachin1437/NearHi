@@ -90,7 +90,15 @@
   /* hero */
   .hero { padding-block: clamp(24px, 5vw, 64px) clamp(56px, 9vw, 120px); }
   .section-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; background-repeat: repeat; background-size: 640px 640px; }
-  .hero { background-image: url(/topo-tile-dark.webp); background-repeat: repeat; background-size: 640px 640px; }
+  /* Anchored to the viewport (not each element's own box) so the header and hero share
+     one continuous pattern with no seam where they meet, without needing a shared wrapper. */
+  header, .hero {
+    background-image: url(/topo-tile-dark.webp);
+    background-repeat: repeat;
+    background-size: 640px 640px;
+    background-attachment: fixed;
+    background-position: 0 0;
+  }
   .cta { background-image: url(/topo-tile-light.webp); background-repeat: repeat; background-size: 640px 640px; }
 
   /* Texture lives on a ::before layer behind the content, not on the section itself,
