@@ -88,11 +88,25 @@
   }
 
   /* hero */
-  .hero { position: relative; overflow: hidden; padding-block: clamp(24px, 5vw, 64px) clamp(56px, 9vw, 120px); }
-  .section-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-  .section-bg img { position: absolute; top: 50%; left: 50%; width: max(1500px, 130vw); height: max(1500px, 130vw); transform: translate(-50%, -50%); object-fit: cover; opacity: .4; }
-  .hero .section-bg { mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%); -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%); }
-  .hero > .wrap { position: relative; z-index: 1; }
+  .hero { padding-block: clamp(24px, 5vw, 64px) clamp(56px, 9vw, 120px); }
+  .section-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; background-repeat: repeat; background-size: 640px 640px; }
+  .hero { background-image: url(/topo-tile-dark.svg); background-repeat: repeat; background-size: 640px 640px; }
+  .cta { background-image: url(/topo-tile-light.svg); background-repeat: repeat; background-size: 640px 640px; }
+
+  /* Texture lives on a ::before layer behind the content, not on the section itself,
+     so masking it can never hide real text, only the decorative background. */
+  #why, #how, #faq { position: relative; isolation: isolate; }
+  #why::before, #how::before, #faq::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-repeat: repeat; background-size: 640px 640px;
+    mask-image: linear-gradient(to right, black 0, black 60px, transparent calc(50% - 740px), transparent calc(50% + 740px), black calc(100% - 60px), black 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0, black 60px, transparent calc(50% - 740px), transparent calc(50% + 740px), black calc(100% - 60px), black 100%);
+  }
+  #why::before { background-image: url(/topo-tile-dark.svg); }
+  #how::before, #faq::before { background-image: url(/topo-tile-light.svg); }
+  @media (max-width: 900px) {
+    #why::before, #how::before, #faq::before { display: none; }
+  }
   .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 6vw, 88px); align-items: center; }
   .hero h1 { font-size: clamp(46px, 7.4vw, 100px); font-weight: 800; line-height: .95; letter-spacing: -0.04em; }
   .lede { margin: 28px 0 36px; max-width: 44ch; text-wrap: balance; font-size: clamp(18px, 2vw, 21px); color: var(--muted); }
@@ -189,8 +203,6 @@
   .ui-chat .me { justify-self: end; background: rgba(242,169,59,.2); border-bottom-right-radius: 4px; }
 
   /* dark bands */
-  #why { position: relative; overflow: hidden; }
-  #why > .wrap { position: relative; z-index: 1; }
   .why-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
   .why-grid > div:first-child { position: sticky; top: 40px; }
   .dark-lede { margin-top: 20px; max-width: 34ch; color: var(--muted); }
@@ -237,7 +249,7 @@
   }
 
   /* closing call to action */
-  .cta { padding-block: clamp(64px, 9vw, 120px); background: var(--ember); color: var(--on-ember); }
+  .cta { padding-block: clamp(64px, 9vw, 120px); background-color: var(--ember); color: var(--on-ember); }
   .cta-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px 64px; align-items: end; }
   .cta h2 { font-size: clamp(42px, 7.4vw, 96px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; color: var(--on-ember); }
   .cta .btn { background: var(--dusk); color: var(--paper); }
@@ -283,7 +295,6 @@
 
 <main id="main">
   <section class="hero">
-    <div class="section-bg" aria-hidden="true"><img src="/topo.svg" alt=""></div>
     <div class="wrap hero-grid">
       <div>
         <h1>Meet someone new, close to home.</h1>
@@ -359,7 +370,6 @@
   </section>
 
   <section class="band" id="why">
-    <div class="section-bg" aria-hidden="true"><img src="/topo.svg" alt="" style="transform:translate(-50%,-50%) scaleX(-1)"></div>
     <div class="wrap">
       <div class="why-grid">
         <div>
