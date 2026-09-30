@@ -7,18 +7,18 @@
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#161B45">
+<meta name="theme-color" content="#12211E">
 <link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   :root {
-    --ink: #161B45;
-    --panel: #1F2659;
-    --panel-line: #353E80;
-    --paper: #F4F5FF;
-    --ember: #FF7A45;
-    --ember-dim: #7A3E23;
-    --muted: #AEB4DC;
+    --ink: #12211E;
+    --panel: #1B322D;
+    --panel-line: #2E4A43;
+    --paper: #F1F7F2;
+    --ember: #F2A93B;
+    --ember-dim: #8A5E1C;
+    --muted: #9CC2B7;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -39,8 +39,8 @@
   .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 500; border-radius: 999px; transition: transform .15s ease, background .15s ease, opacity .2s ease; }
   .btn:active { transform: scale(0.97); }
   .btn:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
-  .btn-primary { background: var(--ember); color: #241206; font-size: 15px; padding: 13px 30px; }
-  .btn-primary:hover { background: #ff8c5f; }
+  .btn-primary { background: var(--ember); color: #241505; font-size: 15px; padding: 13px 30px; }
+  .btn-primary:hover { background: #FFBD5C; }
   .btn-ghost { background: transparent; border: 1px solid var(--panel-line); color: var(--paper); font-size: 13px; padding: 8px 18px; }
   .btn-sm { font-size: 13px; padding: 8px 18px; }
   .btn:disabled { opacity: 0; pointer-events: none; }
@@ -80,14 +80,14 @@
   .custom-radius[hidden] { display: none; }
   input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
   .age-note { margin: 16px 0 0; font-size: 14px; color: var(--muted); }
-  .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #ffc9b3; background: rgba(255,122,69,.10); border: 1px solid rgba(255,122,69,.40); border-radius: 12px; }
+  .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #F6D9A6; background: rgba(242,169,59,.10); border: 1px solid rgba(242,169,59,.40); border-radius: 12px; }
 
   .call { display: none; }
   body.active .call { display: block; }
   body.active .intro { display: none; }
 
-  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: 560px; background: #0E1236; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
-  .video-frame { position: absolute; overflow: hidden; background: #0E1236; user-select: none; }
+  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: 560px; background: #0A1614; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .video-frame { position: absolute; overflow: hidden; background: #0A1614; user-select: none; }
   .video-frame video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
   .video-frame.big { inset: 0; z-index: 1; border-radius: 10px; }
   .video-frame.pip {
@@ -104,7 +104,7 @@
   .video-frame.pip:active { cursor: grabbing; }
   .video-label { position: absolute; left: 10px; bottom: 8px; font-size: 12px; background: rgba(0,0,0,.45); padding: 3px 9px; border-radius: 999px; z-index: 3; pointer-events: none; }
 
-  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(14,18,54,.88); }
+  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(10,22,20,.88); }
   body.matched .radar-overlay { display: none; }
   .radar { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
   .radar .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ember); }
@@ -137,7 +137,7 @@
 </style>
 </head>
 <body class="idle">
-<div class="app">
+<main class="app">
 
   <div class="topbar">
     <a class="wordmark" href="/" aria-label="TalkToMe home">TalkToMe</a>
@@ -202,7 +202,7 @@
     </div>
   </section>
 
-</div>
+</main>
 
 <script>
 const statusEl = document.getElementById('status');

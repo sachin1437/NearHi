@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TalkToMe: meet new people close to home</title>
 <meta name="description" content="Video and text chat with someone new, inside the distance you choose. No account, no profile. Free, in your browser.">
-<meta name="theme-color" content="#161B45">
+<meta name="theme-color" content="#12211E">
 <link rel="canonical" href="https://talktome.cybernetic.co.in/">
 
 <meta property="og:type" content="website">
@@ -26,18 +26,18 @@
 
 <style>
   :root {
-    --dusk: #161B45;
-    --dusk-2: #1F2659;
-    --dusk-line: #353E80;
-    --mist: #EDEFFB;
-    --ink: #131737;
-    --ink-soft: #454C7A;
-    --ember: #FF7A45;
-    --on-ember: #1C0F08;
-    --peri: #8C9BFF;
-    --paper: #F4F5FF;
-    --muted: #AEB4DC;
-    --num: #C9420E;
+    --dusk: #12211E;
+    --dusk-2: #1B322D;
+    --dusk-line: #2E4A43;
+    --mist: #EAF2ED;
+    --ink: #11201C;
+    --ink-soft: #3E5850;
+    --ember: #F2A93B;
+    --on-ember: #241505;
+    --peri: #6FE1C4;
+    --paper: #F1F7F2;
+    --muted: #9CC2B7;
+    --num: #A8570F;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -61,7 +61,7 @@
   .skip { position: absolute; left: -9999px; top: 8px; z-index: 20; background: #fff; color: #000; padding: 10px 16px; border-radius: 8px; }
   .skip:focus { left: 12px; }
 
-  .wrap { max-width: 1160px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 48px); }
+  .wrap { max-width: 1400px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 64px); }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
@@ -70,7 +70,7 @@
     font: inherit; font-weight: 600; font-size: 17px; text-decoration: none; cursor: pointer;
     transition: transform .15s ease, background-color .15s ease;
   }
-  .btn:hover { background: #FF8D5F; }
+  .btn:hover { background: #FFBD5C; }
   .btn:active { transform: scale(.97); }
   .btn-sm { min-height: 42px; padding: 0 20px; font-size: 16px; }
   .btn-lg { min-height: 58px; padding: 0 38px; font-size: 19px; }
@@ -88,7 +88,11 @@
   }
 
   /* hero */
-  .hero { padding-block: clamp(24px, 5vw, 64px) clamp(56px, 9vw, 120px); }
+  .hero { position: relative; overflow: hidden; padding-block: clamp(24px, 5vw, 64px) clamp(56px, 9vw, 120px); }
+  .section-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .section-bg img { position: absolute; top: 50%; left: 50%; width: max(1500px, 130vw); height: max(1500px, 130vw); transform: translate(-50%, -50%); object-fit: cover; opacity: .4; }
+  .hero .section-bg { mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%); -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%); }
+  .hero > .wrap { position: relative; z-index: 1; }
   .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(32px, 6vw, 88px); align-items: center; }
   .hero h1 { font-size: clamp(46px, 7.4vw, 100px); font-weight: 800; line-height: .95; letter-spacing: -0.04em; }
   .lede { margin: 28px 0 36px; max-width: 44ch; text-wrap: balance; font-size: clamp(18px, 2vw, 21px); color: var(--muted); }
@@ -102,7 +106,7 @@
   .hero-visual { display: flex; flex-direction: column; align-items: center; gap: 22px; }
   .map {
     --d: 26%;
-    position: relative; width: min(100%, 540px); aspect-ratio: 1; overflow: hidden; border-radius: 50%;
+    position: relative; width: min(100%, 600px); aspect-ratio: 1; overflow: hidden; border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, #283070 0%, #1D2454 60%, #171C48 100%);
     box-shadow: 0 0 0 1px var(--dusk-line);
   }
@@ -110,7 +114,7 @@
   .ring {
     position: absolute; left: 50%; top: 50%; width: var(--d); height: var(--d); transform: translate(-50%, -50%);
     border: 2px solid var(--ember); border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,122,69,.16), rgba(255,122,69,.05) 72%);
+    background: radial-gradient(circle, rgba(242,169,59,.16), rgba(242,169,59,.05) 72%);
     transition: width .7s cubic-bezier(.3,.7,.2,1), height .7s cubic-bezier(.3,.7,.2,1);
   }
   .ring-label {
@@ -119,12 +123,12 @@
     font-size: 14px; font-weight: 600; white-space: nowrap;
     transition: top .7s cubic-bezier(.3,.7,.2,1);
   }
-  .you { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 0 6px rgba(255,122,69,.28); }
+  .you { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 0 6px rgba(242,169,59,.28); }
   .you::after { content: ""; position: absolute; inset: -6px; border: 2px solid var(--ember); border-radius: 50%; animation: ping 2.8s ease-out infinite; }
   @keyframes ping { from { transform: scale(1); opacity: .7; } to { transform: scale(4.4); opacity: 0; } }
   .you-tag { position: absolute; left: calc(50% + 18px); top: calc(50% + 8px); font-size: 14px; font-weight: 600; }
   .dot { position: absolute; border-radius: 50%; background: var(--peri); opacity: .3; transform: scale(.8); transition: opacity .45s ease, transform .45s ease, box-shadow .45s ease; }
-  .dot.in { opacity: 1; transform: scale(1); box-shadow: 0 0 0 5px rgba(140,155,255,.24); }
+  .dot.in { opacity: 1; transform: scale(1); box-shadow: 0 0 0 5px rgba(111,225,196,.24); }
 
   .range { display: inline-flex; padding: 5px; border-radius: 999px; background: var(--dusk-2); box-shadow: 0 0 0 1px var(--dusk-line); }
   .range button { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color .2s ease, color .2s ease; }
@@ -152,14 +156,14 @@
     .step > p { max-width: 52ch; }
   }
 
-  .ui { margin-top: 22px; padding: 16px; border-radius: 22px; background: var(--dusk); color: var(--paper); box-shadow: 0 22px 40px -26px rgba(22,27,69,.7); font-size: 15px; line-height: 1.4; }
+  .ui { margin-top: 22px; padding: 16px; border-radius: 22px; background: var(--dusk); color: var(--paper); box-shadow: 0 22px 40px -26px rgba(10,20,18,.7); font-size: 15px; line-height: 1.4; }
   .ui-field { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px; background: var(--dusk-2); box-shadow: 0 0 0 1px var(--dusk-line); }
   .ui-field span { color: var(--muted); }
   .ui-field b { margin-left: auto; font-weight: 600; }
   .ui-field i { width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); }
-  .ui-list { list-style: none; margin: 8px 0 0; padding: 6px; border-radius: 12px; background: #262E68; }
+  .ui-list { list-style: none; margin: 8px 0 0; padding: 6px; border-radius: 12px; background: #213B34; }
   .ui-list li { padding: 8px 12px; border-radius: 8px; color: var(--muted); }
-  .ui-list li.sel { background: rgba(255,122,69,.18); color: var(--paper); font-weight: 600; }
+  .ui-list li.sel { background: rgba(242,169,59,.18); color: var(--paper); font-weight: 600; }
 
   .ui-search { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 28px; }
   .mini-radar { position: relative; width: 84px; height: 84px; display: grid; place-items: center; }
@@ -175,16 +179,18 @@
   .pill { padding: 5px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
   .pill-skip { background: var(--ember); color: var(--on-ember); }
   .pill-stop { box-shadow: inset 0 0 0 1px var(--dusk-line); }
-  .ui-tile { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 12px; background: linear-gradient(160deg, #4048A0, #232A66); }
+  .ui-tile { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 12px; background: linear-gradient(160deg, #2F5850, #142823); }
   .ui-tile > svg { position: absolute; left: 50%; bottom: -6%; width: 62%; transform: translateX(-50%); fill: rgba(255,255,255,.16); }
-  .ui-pip { position: absolute; right: 8px; bottom: 8px; width: 34%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 8px; background: linear-gradient(160deg, #FFA078, #E8562A); box-shadow: 0 0 0 2px var(--dusk); }
-  .ui-pip svg { position: absolute; left: 50%; bottom: -10%; width: 72%; transform: translateX(-50%); fill: rgba(28,15,8,.26); }
+  .ui-pip { position: absolute; right: 8px; bottom: 8px; width: 34%; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 8px; background: linear-gradient(160deg, #FFC77A, #D9800F); box-shadow: 0 0 0 2px var(--dusk); }
+  .ui-pip svg { position: absolute; left: 50%; bottom: -10%; width: 72%; transform: translateX(-50%); fill: rgba(36,21,5,.26); }
   .ui-chat { display: grid; gap: 6px; margin-top: 12px; }
   .ui-chat p { max-width: 82%; padding: 7px 12px; border-radius: 14px; }
   .ui-chat .them { background: var(--dusk-2); border-bottom-left-radius: 4px; }
-  .ui-chat .me { justify-self: end; background: rgba(255,122,69,.2); border-bottom-right-radius: 4px; }
+  .ui-chat .me { justify-self: end; background: rgba(242,169,59,.2); border-bottom-right-radius: 4px; }
 
   /* dark bands */
+  #why { position: relative; overflow: hidden; }
+  #why > .wrap { position: relative; z-index: 1; }
   .why-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
   .why-grid > div:first-child { position: sticky; top: 40px; }
   .dark-lede { margin-top: 20px; max-width: 34ch; color: var(--muted); }
@@ -214,8 +220,8 @@
   /* faq */
   .faq-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
   .faq-grid > div:first-child { position: sticky; top: 40px; }
-  details { border-top: 1px solid #C3C9EA; }
-  details:last-child { border-bottom: 1px solid #C3C9EA; }
+  details { border-top: 1px solid #C9DAD2; }
+  details:last-child { border-bottom: 1px solid #C9DAD2; }
   summary { display: flex; justify-content: space-between; gap: 24px; padding: 22px 0; cursor: pointer; list-style: none; font-size: 21px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.3; }
   summary::-webkit-details-marker { display: none; }
   summary::after {
@@ -235,7 +241,7 @@
   .cta-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px 64px; align-items: end; }
   .cta h2 { font-size: clamp(42px, 7.4vw, 96px); font-weight: 800; letter-spacing: -0.04em; line-height: .95; color: var(--on-ember); }
   .cta .btn { background: var(--dusk); color: var(--paper); }
-  .cta .btn:hover { background: #262E70; }
+  .cta .btn:hover { background: #24413B; }
   .cta small { display: block; margin-top: 16px; max-width: 28ch; font-size: 16px; }
   @media (max-width: 760px) { .cta-inner { grid-template-columns: 1fr; } }
 
@@ -262,7 +268,7 @@
   <div class="wrap">
     <div class="nav">
       <a class="brand" href="/" aria-label="TalkToMe home">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#FF7A45" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#FF7A45" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#FF7A45"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>
         TalkToMe
       </a>
       <nav class="nav-links" aria-label="Main">
@@ -277,6 +283,7 @@
 
 <main id="main">
   <section class="hero">
+    <div class="section-bg" aria-hidden="true"><img src="/topo.svg" alt=""></div>
     <div class="wrap hero-grid">
       <div>
         <h1>Meet someone new, close to home.</h1>
@@ -352,6 +359,7 @@
   </section>
 
   <section class="band" id="why">
+    <div class="section-bg" aria-hidden="true"><img src="/topo.svg" alt="" style="transform:translate(-50%,-50%) scaleX(-1)"></div>
     <div class="wrap">
       <div class="why-grid">
         <div>
@@ -459,7 +467,7 @@
 <footer>
   <div class="wrap foot">
     <a class="brand" href="/" aria-label="TalkToMe home">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#FF7A45" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#FF7A45" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#FF7A45"/></svg>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>
       TalkToMe
     </a>
     <nav aria-label="Footer">
