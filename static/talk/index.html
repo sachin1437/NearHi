@@ -23,7 +23,8 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    background: var(--ink);
+    background: var(--ink) url(/topo-tile-dark.webp) repeat;
+    background-size: 640px 640px;
     color: var(--paper);
     font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-optical-sizing: auto;
@@ -32,7 +33,8 @@
   .app { max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }
 
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 40px; }
-  .wordmark { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; text-decoration: none; color: inherit; }
+  .wordmark { display: flex; align-items: center; gap: 12px; font-size: 29px; font-weight: 700; letter-spacing: -0.025em; text-decoration: none; color: inherit; }
+  .wordmark svg { width: 38px; height: 38px; }
   .topbar-right { display: flex; align-items: center; gap: 16px; }
   .status { font-size: 13px; color: var(--muted); }
 
@@ -140,7 +142,10 @@
 <main class="app">
 
   <div class="topbar">
-    <a class="wordmark" href="/" aria-label="NearHi home">NearHi</a>
+    <a class="wordmark" href="/" aria-label="NearHi home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>
+      NearHi
+    </a>
     <div class="topbar-right">
       <span id="status" class="status">Connecting…</span>
       <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
