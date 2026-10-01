@@ -57,15 +57,31 @@ nearby-chat/
 | `REDIS_URL` | No | `redis://localhost:6379` | On Railway, set this to `${{Redis.REDIS_URL}}` to reference the Redis add-on. |
 | `TURN_API_KEY` | No | unset | API key from a TURN provider (e.g. metered.ca). |
 | `TURN_DOMAIN` | No | unset | The subdomain your TURN provider gave you. |
+| `OPENAI_API_KEY` | No | unset | Enables chat moderation (OpenAI's moderation endpoint, free). Without it, chat messages are never screened. |
+| `BAN_SALT` | No | a dev-only default | Salts the hashed IPs used for IP-based bans. Set your own random value in production, raw IPs are never stored either way. |
+| `ADMIN_TOKEN` | No | unset | Required to use `/admin/reports` and `/admin/ban`. Without it, those endpoints return 404 and are effectively disabled. Treat it like a password. |
 
 Without the two `TURN_*` variables set, `/ice-servers` just returns Google's public STUN server. That's enough for most home networks but will fail behind stricter NATs and some mobile carriers, add a TURN provider before relying on this for real users.
+
+Without `OPENAI_API_KEY` set, chat still works exactly as before, messages just aren't screened. This fails open deliberately, a broken moderation call should never be the reason chat itself stops working.
 
 ## 🚀 Deployment
 
 Push to GitHub, then on Railway: New Project, deploy from the repo, add a Redis plugin, set `REDIS_URL` to `${{Redis.REDIS_URL}}` in the web service's variables, generate a domain.
 
+## 🛡️ Moderation and bans
+
+Every chat message is checked against OpenAI's moderation endpoint before it's relayed (if `OPENAI_API_KEY` is set). A flagged message is never sent to the other person, the sender gets a "didn't pass the content check" notice instead, and it's counted against their `client_id`.
+
+Each browser gets a `client_id`, a random value stored in `localStorage`, generated on first visit. It's not an account, there's no login or profile behind it, it only exists so a ban means something across sessions instead of resetting the moment someone reconnects. Clearing site data resets it, same as clearing cookies resets any anonymous tracking.
+
+Anyone in an active call can tap **Report**, which logs the other person's `client_id` and a hashed version of their IP (never the raw IP) to a pending-reports queue. Review it at `/admin/reports?token=<ADMIN_TOKEN>`, then ban with a `POST` to `/admin/ban?token=<ADMIN_TOKEN>&client_id=<id>` (or `&ip_hash=<hash>` instead, or both). A ban on either blocks all future matching for that identifier, immediately, no redeploy needed.
+
+This is **manual-review banning, not automatic**. A string of flagged messages is counted but doesn't ban anyone by itself, you decide after looking at the reports. That's a deliberate choice: automatic banning on flag count alone risks banning someone over one bad judgment call. If you'd rather it auto-ban after N flags, that's a small change to `check_message`'s caller, say so.
+
 ## ⚠️ Known limitations
 
 - **Single process.** The map of live WebSocket connections lives in memory in one process. Scaling to multiple workers or instances needs that moved to something shared (Redis pub/sub) so a message can reach a user connected to a different process.
-- **No content moderation yet.** Neither chat text nor video is screened. This needs to exist before this goes out to real strangers, text moderation first, then periodic video frame checks.
+- **Video is never screened.** Moderation above covers chat text only. Nothing looks at the video stream itself, that would need periodic frame sampling against a moderation API and is a separate, bigger piece of work.
 - **No CSAM detection or reporting pipeline.** This is a legal requirement, not an optional feature, before taking real traffic. Needs a vetted third-party provider (PhotoDNA, Thorn Safer), not a custom detector. Get real legal advice on reporting obligations for your jurisdiction.
+- **Bans aren't unbreakable.** A `client_id` lives in `localStorage` and an IP can change, someone determined enough can clear site data and switch networks to get a fresh identity. This raises the bar for casual repeat offenders, it doesn't stop a determined one. Nothing short of phone or ID verification does, and that's a much bigger product decision, not a bug fix.

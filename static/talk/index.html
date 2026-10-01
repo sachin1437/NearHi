@@ -148,6 +148,7 @@
     </a>
     <div class="topbar-right">
       <span id="status" class="status">Connecting…</span>
+      <button id="reportBtn" class="btn btn-ghost btn-sm" disabled>Report</button>
       <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
       <button id="stopBtn" class="btn btn-ghost" disabled>Stop</button>
     </div>
@@ -216,6 +217,7 @@ const chatInput = document.getElementById('chatInput');
 const findBtn = document.getElementById('findBtn');
 const stopBtn = document.getElementById('stopBtn');
 const skipBtn = document.getElementById('skipBtn');
+const reportBtn = document.getElementById('reportBtn');
 const radiusSelect = document.getElementById('radiusSelect');
 const customWrap = document.getElementById('customWrap');
 const radiusCustom = document.getElementById('radiusCustom');
@@ -252,7 +254,20 @@ function getRadiusKm() {
 }
 
 let ws, pc, localStream;
-let lastSearch = null; // where and how far we are searching, reused to find the next person
+let lastSearch = null;
+
+// A per-browser id, not an account. Lets a ban actually mean something across
+// sessions; cleared if the person clears site data, by design, this is not
+// meant to identify anyone, only to let bad actors be turned away faster.
+function getClientId() {
+  let id = localStorage.getItem('nearhi_client_id');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+    localStorage.setItem('nearhi_client_id', id);
+  }
+  return id;
+}
+const CLIENT_ID = getClientId(); // where and how far we are searching, reused to find the next person
 let ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // fallback until /ice-servers loads
 
 async function loadIceServers() {
@@ -285,6 +300,7 @@ function connect() {
       statusEl.textContent = 'Matched. Say hi!';
       chatInput.disabled = false;
       skipBtn.disabled = false;
+      reportBtn.disabled = false;
       document.body.classList.add('matched');
       await startPeerConnection(msg.initiator);
     }
@@ -297,8 +313,19 @@ function connect() {
       log('Stranger: ' + msg.data);
     }
 
+    if (msg.type === 'chat_blocked') {
+      log('Your message was not sent, it did not pass the content check.');
+    }
+
     if (msg.type === 'peer_left') {
       goBackToSearching('They left. Looking for someone new...');
+    }
+
+    if (msg.type === 'banned') {
+      stopEverything();
+      findBtn.disabled = true;
+      showStartError('This device or network has been restricted from NearHi.');
+      statusEl.textContent = 'Restricted.';
     }
   };
 }
@@ -363,10 +390,11 @@ function stopEverything() {
   document.body.classList.remove('active', 'matched');
   stopBtn.disabled = true;
   skipBtn.disabled = true;
+  reportBtn.disabled = true;
 }
 
 function sendFind() {
-  if (lastSearch) ws.send(JSON.stringify({ type: 'find', ...lastSearch }));
+  if (lastSearch) ws.send(JSON.stringify({ type: 'find', client_id: CLIENT_ID, ...lastSearch }));
 }
 
 // Drop the current person (if any) and go back to searching on the same screen.
@@ -375,6 +403,7 @@ function goBackToSearching(message) {
   chatEl.innerHTML = '';
   document.body.classList.remove('matched');
   skipBtn.disabled = true;
+  reportBtn.disabled = true;
   statusEl.textContent = message;
   sendFind();
 }
@@ -454,6 +483,12 @@ stopBtn.onclick = () => {
 skipBtn.onclick = () => {
   ws.send(JSON.stringify({ type: 'skip' }));
   goBackToSearching('Skipped. Looking for someone new...');
+};
+
+reportBtn.onclick = () => {
+  ws.send(JSON.stringify({ type: 'report', reason: 'reported from call' }));
+  ws.send(JSON.stringify({ type: 'skip' }));
+  goBackToSearching('Reported. Looking for someone new...');
 };
 
 chatInput.addEventListener('keydown', (e) => {

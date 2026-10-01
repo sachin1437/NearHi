@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import time
@@ -19,10 +20,28 @@ TURN_DOMAIN = os.environ.get("TURN_DOMAIN")  # e.g. "yoursubdomain.metered.live"
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
+# Moderation: OpenAI's moderation endpoint is free. Without a key set, chat
+# still works, messages just aren't screened, logged clearly below so this
+# doesn't fail silently in production.
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# Salts the hashed IP used for bans, so raw IPs are never stored. Set your
+# own random value in production; this default is fine for local testing only.
+BAN_SALT = os.environ.get("BAN_SALT", "dev-only-change-me")
+
+# Shared secret for the /admin endpoints. There's no login system yet, this
+# is a single token you keep private, not real auth, treat it like a password.
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
+
 WAITING_GEO_KEY = "waiting:geo"        # geo set: user_id -> (lon, lat)
 WAITING_META_PREFIX = "waiting:meta:"  # hash per user_id: radius_km, joined_at
 ROOM_PREFIX = "room:"                  # user_id -> peer_id while paired
 RECENT_PREFIX = "recent:"              # user_id -> set of peers they just skipped or left
+BANNED_CLIENTS_KEY = "banned:clients"  # set of banned client_id values (browser-stored)
+BANNED_IPS_KEY = "banned:ips"          # set of banned hashed-IP values
+FLAGGED_COUNT_PREFIX = "flagged:"      # client_id -> count of moderation-flagged messages
+REPORTS_KEY = "reports:pending"        # list of pending report records, newest last
+MAX_PENDING_REPORTS = 500              # oldest reports drop off past this, so the list can't grow forever
 
 MIN_RADIUS_KM = 10
 MAX_RADIUS_KM = 20050                  # more than half the Earth's circumference, i.e. "anywhere"
@@ -48,6 +67,7 @@ return 0
 # move to something shared (e.g. Redis pub/sub) so a message can reach a
 # user connected to a different process.
 connections: dict[str, WebSocket] = {}
+identities: dict[str, dict] = {}  # user_id -> {"client_id": ..., "ip_hash": ...}
 
 
 @app.on_event("startup")
@@ -139,6 +159,62 @@ async def send_to(user_id: str, payload: dict):
             pass
 
 
+def hash_ip(ip: str) -> str:
+    return hashlib.sha256((BAN_SALT + ip).encode()).hexdigest()
+
+
+def client_ip(websocket: WebSocket) -> str:
+    forwarded = websocket.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return websocket.client.host if websocket.client else "unknown"
+
+
+async def is_banned(client_id: str, ip_hash: str) -> bool:
+    if client_id and await redis_client.sismember(BANNED_CLIENTS_KEY, client_id):
+        return True
+    if ip_hash and await redis_client.sismember(BANNED_IPS_KEY, ip_hash):
+        return True
+    return False
+
+
+async def check_message(text: str) -> bool:
+    """True if the text is safe to relay. Fails open (allows the message) if
+    no API key is set or the moderation call itself fails, since a broken
+    moderation call should never be the reason chat stops working."""
+    if not OPENAI_API_KEY or not text:
+        return True
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/moderations",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+                json={"input": text},
+            )
+            resp.raise_for_status()
+            result = resp.json()["results"][0]
+            return not result["flagged"]
+    except Exception:
+        return True
+
+
+async def record_flag(client_id: str):
+    if client_id:
+        await redis_client.incr(FLAGGED_COUNT_PREFIX + client_id)
+
+
+async def record_report(reported: dict, reporter: dict, reason: str):
+    record = {
+        "reported_client_id": reported.get("client_id"),
+        "reported_ip_hash": reported.get("ip_hash"),
+        "reporter_client_id": reporter.get("client_id"),
+        "reason": (reason or "")[:280],
+        "ts": time.time(),
+    }
+    await redis_client.rpush(REPORTS_KEY, json.dumps(record))
+    await redis_client.ltrim(REPORTS_KEY, -MAX_PENDING_REPORTS, -1)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -153,6 +229,18 @@ async def ws_endpoint(websocket: WebSocket):
             mtype = msg.get("type")
 
             if mtype == "find":
+                # identity is attached to the 'find' message (the first real action a
+                # client takes), rather than at connect time, so the client has had a
+                # chance to load or generate its stored client_id first.
+                client_id = str(msg.get("client_id") or "")[:128]
+                ip_hash = hash_ip(client_ip(websocket))
+                identities[user_id] = {"client_id": client_id, "ip_hash": ip_hash}
+
+                if await is_banned(client_id, ip_hash):
+                    await websocket.send_text(json.dumps({"type": "banned"}))
+                    await websocket.close()
+                    return
+
                 lat = float(msg["lat"])
                 lon = float(msg["lon"])
                 radius_km = clamp_radius(msg.get("radius_km"))
@@ -177,10 +265,30 @@ async def ws_endpoint(websocket: WebSocket):
                         break  # someone else already paired us, they send the notifications
                     # otherwise that candidate was taken by someone else, look again
 
-            elif mtype in ("chat", "signal"):
+            elif mtype == "signal":
                 peer_id = await redis_client.get(ROOM_PREFIX + user_id)
                 if peer_id:
-                    await send_to(peer_id, {"type": mtype, "data": msg.get("data")})
+                    await send_to(peer_id, {"type": "signal", "data": msg.get("data")})
+
+            elif mtype == "chat":
+                peer_id = await redis_client.get(ROOM_PREFIX + user_id)
+                if not peer_id:
+                    continue
+                text = msg.get("data")
+                if await check_message(text):
+                    await send_to(peer_id, {"type": "chat", "data": text})
+                else:
+                    await record_flag(identities.get(user_id, {}).get("client_id", ""))
+                    await send_to(user_id, {"type": "chat_blocked"})
+
+            elif mtype == "report":
+                peer_id = await redis_client.get(ROOM_PREFIX + user_id)
+                if peer_id:
+                    await record_report(
+                        reported=identities.get(peer_id, {}),
+                        reporter=identities.get(user_id, {}),
+                        reason=msg.get("reason", ""),
+                    )
 
             elif mtype == "skip":
                 await remove_from_pool(user_id)
@@ -197,6 +305,7 @@ async def ws_endpoint(websocket: WebSocket):
             await send_to(peer_id, {"type": "peer_left"})
         await remove_from_pool(user_id)
         connections.pop(user_id, None)
+        identities.pop(user_id, None)
 
 
 @app.get("/ice-servers")
@@ -215,6 +324,38 @@ async def ice_servers():
         # if the TURN provider is unreachable, fail back to STUN-only
         # rather than breaking the whole app
         return [{"urls": "stun:stun.l.google.com:19302"}]
+
+
+def require_admin(token: str):
+    from fastapi import HTTPException
+    if not ADMIN_TOKEN or token != ADMIN_TOKEN:
+        raise HTTPException(status_code=404)  # 404, not 401: don't advertise this endpoint exists
+
+
+@app.get("/admin/reports")
+async def admin_reports(token: str = ""):
+    require_admin(token)
+    raw = await redis_client.lrange(REPORTS_KEY, 0, -1)
+    reports = [json.loads(r) for r in raw]
+    counts = {}
+    for r in reports:
+        cid = r.get("reported_client_id")
+        if cid:
+            counts[cid] = counts.get(cid, 0) + 1
+    return {"reports": list(reversed(reports)), "report_counts_by_client_id": counts}
+
+
+@app.post("/admin/ban")
+async def admin_ban(token: str = "", client_id: str = "", ip_hash: str = ""):
+    require_admin(token)
+    if not client_id and not ip_hash:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="provide client_id and/or ip_hash")
+    if client_id:
+        await redis_client.sadd(BANNED_CLIENTS_KEY, client_id)
+    if ip_hash:
+        await redis_client.sadd(BANNED_IPS_KEY, ip_hash)
+    return {"banned": {"client_id": client_id or None, "ip_hash": ip_hash or None}}
 
 
 @app.get("/talk")
