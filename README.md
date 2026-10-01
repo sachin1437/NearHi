@@ -1,4 +1,4 @@
-![TalkToMe](docs/banner.svg)
+![NearHi](docs/banner.svg)
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
