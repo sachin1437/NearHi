@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>NearHi admin</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root { --ink:#12211E; --panel:#1B322D; --line:#2E4A43; --paper:#F1F7F2; --muted:#9CC2B7; --ember:#F2A93B; --on-ember:#241505; --danger:#FF8E7A; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ink); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, sans-serif; font-size:16px; line-height:1.5; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 20px; margin: 36px 0 12px; }
+  p.muted, .muted { color: var(--muted); }
+  .bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin: 8px 0 20px; }
+  input[type=password] { flex:1; min-width:220px; max-width:420px; padding:10px 12px; background:var(--panel); color:var(--paper); border:1px solid var(--line); border-radius:10px; font:inherit; }
+  button { font:inherit; font-weight:600; cursor:pointer; border:0; border-radius:999px; padding:8px 18px; background:var(--ember); color:var(--on-ember); }
+  button.ghost { background:transparent; color:var(--paper); border:1px solid var(--line); }
+  button.danger { background:var(--danger); color:#2a0d07; }
+  button:disabled { opacity:.5; cursor:default; }
+  :focus-visible { outline:3px solid #6FE1C4; outline-offset:2px; }
+  table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; font-size:14px; }
+  th { color:var(--muted); font-weight:600; }
+  tr:last-child td { border-bottom:0; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .actions label { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; margin-right:4px; }
+  .tag.auto { border-color:var(--ember); color:var(--ember); }
+  #msg { min-height: 24px; color: var(--ember); }
+  .hidden { display:none; }
+  .wrapx { overflow-x:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NearHi admin</h1>
+  <p class="muted">Reports from people and from the automatic screening. Nothing here stores video or images.</p>
+
+  <section id="login">
+    <div class="bar">
+      <input type="password" id="token" placeholder="Admin token" autocomplete="off" aria-label="Admin token">
+      <button id="signin">Sign in</button>
+    </div>
+  </section>
+  <p id="msg" role="status"></p>
+
+  <section id="panel" class="hidden">
+    <div class="bar">
+      <button class="ghost" id="refresh">Refresh</button>
+      <button class="ghost" id="signout">Sign out</button>
+      <span class="muted" id="updated"></span>
+    </div>
+
+    <h2>Reported browsers</h2>
+    <p class="muted">Banning blocks that browser right away, and disconnects it if it is connected now. Blocking the network too can also affect other people on the same connection, so it is off unless you tick it.</p>
+    <div class="wrapx"><table id="reports"><thead><tr>
+      <th>Browser ID</th><th>Reports</th><th>Flags</th><th>Latest</th><th>Action</th>
+    </tr></thead><tbody></tbody></table></div>
+
+    <h2>Banned</h2>
+    <div class="wrapx"><table id="bans"><thead><tr><th>Type</th><th>Value</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY = 'nearhi_admin_token';
+let token = sessionStorage.getItem(KEY) || '';
+
+function say(text) { $('msg').textContent = text || ''; }
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  if (res.status === 404) throw new Error('Wrong token, or the admin routes are not enabled on this server.');
+  if (!res.ok) throw new Error('Request failed (' + res.status + ').');
+  return res.json();
+}
+
+function el(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;   // textContent only, never innerHTML: reasons are user-supplied
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, className, onClick) {
+  const b = el('button', label, className);
+  b.onclick = onClick;
+  return b;
+}
+
+function when(ts) { return new Date(ts * 1000).toLocaleString(); }
+
+function groupByClient(reports) {
+  const groups = new Map();
+  for (const r of reports) {                       // reports arrive newest first
+    const id = r.reported_client_id;
+    if (!id) continue;
+    if (!groups.has(id)) groups.set(id, { id, items: [], latestIp: r.reported_ip_hash || '' });
+    groups.get(id).items.push(r);
+  }
+  return [...groups.values()];
+}
+
+async function act(path, body, done) {
+  try {
+    say('Working…');
+    await api(path, { method: 'POST', body: JSON.stringify(body) });
+    say(done);
+    await load();
+  } catch (e) { say(e.message); }
+}
+
+function renderReports(data) {
+  const body = $('reports').querySelector('tbody');
+  body.replaceChildren();
+  const groups = groupByClient(data.reports);
+  if (!groups.length) {
+    const tr = el('tr'); const td = el('td', 'Nothing to review.', 'muted'); td.colSpan = 5; tr.append(td); body.append(tr);
+    return;
+  }
+  groups.sort((a, b) => b.items.length - a.items.length);
+  for (const g of groups) {
+    const tr = el('tr');
+    const idCell = el('td'); const code = el('code', g.id.slice(0, 12) + (g.id.length > 12 ? '…' : '')); code.title = g.id; idCell.append(code);
+
+    const people = g.items.filter(r => r.source !== 'video-screen').length;
+    const auto = g.items.length - people;
+    const reportsCell = el('td');
+    reportsCell.append(el('span', people + ' from people', 'tag'));
+    if (auto) reportsCell.append(el('span', auto + ' automatic', 'tag auto'));
+    const reporters = new Set(g.items.map(r => r.reporter_client_id).filter(Boolean)).size;
+    reportsCell.append(el('div', reporters + ' different reporter' + (reporters === 1 ? '' : 's'), 'muted'));
+
+    const flagsCell = el('td', String(data.flag_counts_by_client_id[g.id] || 0));
+    const latest = g.items[0];
+    const latestCell = el('td'); latestCell.append(el('div', when(latest.ts)), el('div', latest.reason || '(no reason)', 'muted'));
+
+    const actionCell = el('td'); const wrap = el('div', undefined, 'actions');
+    const net = document.createElement('input'); net.type = 'checkbox'; net.id = 'net-' + g.id;
+    const netLabel = el('label'); netLabel.htmlFor = net.id; netLabel.append(net, document.createTextNode('also block network'));
+    wrap.append(
+      button('Ban', 'danger', () => {
+        if (!confirm('Ban this browser' + (net.checked ? ' and its network' : '') + '?')) return;
+        act('/admin/ban', { client_id: g.id, ip_hash: net.checked ? g.latestIp : '' }, 'Banned.');
+      }),
+      button('Dismiss', 'ghost', () => act('/admin/dismiss', { client_id: g.id }, 'Dismissed.')),
+      netLabel,
+    );
+    actionCell.append(wrap);
+    tr.append(idCell, reportsCell, flagsCell, latestCell, actionCell);
+    body.append(tr);
+  }
+}
+
+function renderBans(data) {
+  const body = $('bans').querySelector('tbody');
+  body.replaceChildren();
+  const rows = [
+    ...data.client_ids.map(v => ({ type: 'Browser', value: v, payload: { client_id: v } })),
+    ...data.ip_hashes.map(v => ({ type: 'Network', value: v, payload: { ip_hash: v } })),
+  ];
+  if (!rows.length) {
+    const tr = el('tr'); const td = el('td', 'Nobody is banned.', 'muted'); td.colSpan = 3; tr.append(td); body.append(tr);
+    return;
+  }
+  for (const r of rows) {
+    const tr = el('tr');
+    const valueCell = el('td'); const code = el('code', r.value.slice(0, 16) + (r.value.length > 16 ? '…' : '')); code.title = r.value; valueCell.append(code);
+    const actionCell = el('td'); actionCell.append(button('Unban', 'ghost', () => act('/admin/unban', r.payload, 'Unbanned.')));
+    tr.append(el('td', r.type), valueCell, actionCell);
+    body.append(tr);
+  }
+}
+
+async function load() {
+  const [reports, bans] = await Promise.all([api('/admin/reports'), api('/admin/bans')]);
+  renderReports(reports);
+  renderBans(bans);
+  $('login').classList.add('hidden');
+  $('panel').classList.remove('hidden');
+  $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+async function signIn() {
+  token = $('token').value.trim() || token;
+  $('token').value = '';
+  try {
+    say('Checking…');
+    await load();
+    sessionStorage.setItem(KEY, token);   // kept only until this tab closes
+    say('');
+  } catch (e) { token = ''; say(e.message); }
+}
+
+$('signin').onclick = signIn;
+$('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') signIn(); });
+$('refresh').onclick = () => load().then(() => say('')).catch(e => say(e.message));
+$('signout').onclick = () => { sessionStorage.removeItem(KEY); token = ''; location.reload(); };
+if (token) signIn();
+</script>
+</body>
+</html>

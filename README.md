@@ -27,7 +27,7 @@ Random video and text chat with strangers, matched by how close they are to you,
 
 ```
 nearby-chat/
-├── main.py              backend: matching, chat relay, signaling relay, /ice-servers
+├── main.py              backend: matching, chat + video screening, signaling relay, bans, admin API
 ├── requirements.txt
 ├── Procfile              tells Railway/Render how to start the app
 ├── .gitignore
@@ -37,6 +37,12 @@ nearby-chat/
     ├── index.html        landing page, served at /
     ├── talk/
     │   └── index.html    the chat app, served at /talk/
+    ├── admin/
+    │   └── index.html    the report review page, served at /admin/ (needs the admin token)
+    ├── terms/
+    │   └── index.html    Terms of Use
+    ├── privacy/
+    │   └── index.html    Privacy Policy
     ├── fonts/            self-hosted font, its stylesheet and licence
     ├── topo.svg          map artwork used on the landing page
     ├── og-image.png      preview image shown when the link is shared
@@ -57,13 +63,14 @@ nearby-chat/
 | `REDIS_URL` | No | `redis://localhost:6379` | On Railway, set this to `${{Redis.REDIS_URL}}` to reference the Redis add-on. |
 | `TURN_API_KEY` | No | unset | API key from a TURN provider (e.g. metered.ca). |
 | `TURN_DOMAIN` | No | unset | The subdomain your TURN provider gave you. |
-| `OPENAI_API_KEY` | No | unset | Enables chat moderation (OpenAI's moderation endpoint, free). Without it, chat messages are never screened. |
-| `BAN_SALT` | No | a dev-only default | Salts the hashed IPs used for IP-based bans. Set your own random value in production, raw IPs are never stored either way. |
-| `ADMIN_TOKEN` | No | unset | Required to use `/admin/reports` and `/admin/ban`. Without it, those endpoints return 404 and are effectively disabled. Treat it like a password. |
+| `OPENAI_API_KEY` | No | unset | Turns on screening of chat messages and video stills (OpenAI's moderation endpoint, free). Without it, nothing is screened. |
+| `BAN_SALT` | **Set it in production** | a public dev-only default | Secret that scrambles IPs before they're stored. While it is the public default, anyone can reverse the stored hashes, so set your own random value. |
+| `ADMIN_TOKEN` | No | unset | Password for the admin routes and the `/admin/` page. Without it they return 404 and are disabled. Sent in an `Authorization` header, never in the URL. |
+| `MODERATION_URL` | No | OpenAI's endpoint | Only for testing: points screening at a stand-in server instead of OpenAI. |
 
 Without the two `TURN_*` variables set, `/ice-servers` just returns Google's public STUN server. That's enough for most home networks but will fail behind stricter NATs and some mobile carriers, add a TURN provider before relying on this for real users.
 
-Without `OPENAI_API_KEY` set, chat still works exactly as before, messages just aren't screened. This fails open deliberately, a broken moderation call should never be the reason chat itself stops working.
+Without `OPENAI_API_KEY` set, chat and video still work exactly as before, they just aren't screened. This fails open deliberately, a broken moderation call should never be the reason a call stops working. Open `/status` on the live site to confirm what is switched on, it returns `text_screening`, `video_screening` and `ban_salt_set`, and the server also prints a warning at startup for anything unset.
 
 ## 🚀 Deployment
 
@@ -71,17 +78,22 @@ Push to GitHub, then on Railway: New Project, deploy from the repo, add a Redis 
 
 ## 🛡️ Moderation and bans
 
-Every chat message is checked against OpenAI's moderation endpoint before it's relayed (if `OPENAI_API_KEY` is set). A flagged message is never sent to the other person, the sender gets a "didn't pass the content check" notice instead, and it's counted against their `client_id`.
+**Chat.** Every message is checked before it's relayed. A flagged message is never delivered, the sender is told, and it's counted against their `client_id`.
 
-Each browser gets a `client_id`, a random value stored in `localStorage`, generated on first visit. It's not an account, there's no login or profile behind it, it only exists so a ban means something across sessions instead of resetting the moment someone reconnects. Clearing site data resets it, same as clearing cookies resets any anonymous tracking.
+**Video.** While two people are in a call, each browser takes a small still (320 px JPEG) of the *other* person's video every 5 seconds and sends it to the server, which checks it and discards it. Frames are only ever held in memory, never stored or logged. If one is flagged, the viewer's call ends with an explanation, the sender is told the other person left, and an automatic report goes into the review queue against the sender. Screening what you *receive* is deliberate: someone running a modified page could skip checking their own camera, but can't stop the other side from checking theirs. The cost is that a modified viewer could send fake frames to flag an innocent person. That can only create a report for you to review, never a ban, which is one reason bans are manual.
 
-Anyone in an active call can tap **Report**, which logs the other person's `client_id` and a hashed version of their IP (never the raw IP) to a pending-reports queue. Review it at `/admin/reports?token=<ADMIN_TOKEN>`, then ban with a `POST` to `/admin/ban?token=<ADMIN_TOKEN>&client_id=<id>` (or `&ip_hash=<hash>` instead, or both). A ban on either blocks all future matching for that identifier, immediately, no redeploy needed.
+**Identity.** Each browser gets a `client_id`, a random value in `localStorage`. It's not an account, there's no login or profile behind it, it only exists so a ban means something across sessions. A scrambled (salted-hash) IP is kept alongside it, never the raw address. Clearing site data resets the `client_id`.
 
-This is **manual-review banning, not automatic**. A string of flagged messages is counted but doesn't ban anyone by itself, you decide after looking at the reports. That's a deliberate choice: automatic banning on flag count alone risks banning someone over one bad judgment call. If you'd rather it auto-ban after N flags, that's a small change to `check_message`'s caller, say so.
+**Review.** Open `/admin/` and paste your `ADMIN_TOKEN`. You'll see each reported browser with how many reports came from people, how many were automatic, how many *different* people reported it (the number to trust most), and the latest reason. From there you can **Ban**, **Dismiss**, and **Unban**. A ban takes effect immediately and disconnects the person if they're connected. Blocking their *network* as well is off by default, because mobile carriers put many people behind one address and a network block can lock out innocent people. The same actions exist as API routes (`/admin/reports`, `/admin/bans`, `/admin/ban`, `/admin/unban`, `/admin/dismiss`) that expect `Authorization: Bearer <ADMIN_TOKEN>`.
+
+**Banning is manual, not automatic.** Flags are counted and reports are queued, but nobody is banned until you decide. Automatic banning on a flag count risks banning someone over one bad judgment call, and you're the only reviewer, so check `/admin/` regularly once people are using it.
 
 ## ⚠️ Known limitations
 
 - **Single process.** The map of live WebSocket connections lives in memory in one process. Scaling to multiple workers or instances needs that moved to something shared (Redis pub/sub) so a message can reach a user connected to a different process.
-- **Video is never screened.** Moderation above covers chat text only. Nothing looks at the video stream itself, that would need periodic frame sampling against a moderation API and is a separate, bigger piece of work.
-- **No CSAM detection or reporting pipeline.** This is a legal requirement, not an optional feature, before taking real traffic. Needs a vetted third-party provider (PhotoDNA, Thorn Safer), not a custom detector. Get real legal advice on reporting obligations for your jurisdiction.
+- **Video is sampled, not watched.** One still every 5 seconds means anything shown between samples is missed, and the screening can also flag harmless things. It lowers the risk, it does not remove it, and nobody watches calls live.
+- **No CSAM detection or reporting pipeline.** The screening above is a general content check, it is **not** a detector for child sexual abuse material. That needs a vetted specialist provider (PhotoDNA, Thorn Safer), not a custom detector, plus real legal advice on reporting obligations for your jurisdiction. This is still a launch blocker for wide public use.
+- **18+ is a checkbox.** Nothing verifies age. Two adults is the intended use, but a minor can click the same button.
+- **Network addresses are visible during a call.** Direct video means each person's browser can see the other's IP address, which roughly reveals a city. Forcing every call through a TURN relay would hide it, at the cost of relaying all video traffic through your provider. The Privacy Policy says this plainly.
+- **The legal pages are a plain-language starting point, not legal advice.** Have a lawyer read them, especially for Indian requirements around platforms (grievance contact) and personal data, before a wide launch. Replace the `YOUR_CONTACT_EMAIL_HERE` placeholder in both pages first.
 - **Bans aren't unbreakable.** A `client_id` lives in `localStorage` and an IP can change, someone determined enough can clear site data and switch networks to get a fresh identity. This raises the bar for casual repeat offenders, it doesn't stop a determined one. Nothing short of phone or ID verification does, and that's a much bigger product decision, not a bug fix.

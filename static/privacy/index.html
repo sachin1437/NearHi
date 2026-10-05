@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Privacy Policy | NearHi</title>
+<meta name="description" content="What NearHi handles, why, and which services are involved.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12211E">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root { --ink:#12211E; --panel:#1B322D; --line:#2E4A43; --paper:#F1F7F2; --muted:#9CC2B7; --ember:#F2A93B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ink); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a { color: var(--ember); text-underline-offset: 3px; }
+  :focus-visible { outline:3px solid #6FE1C4; outline-offset:3px; border-radius:4px; }
+  header, main, footer { max-width: 72ch; margin: 0 auto; padding-inline: 22px; }
+  header { padding-top: 26px; padding-bottom: 6px; }
+  .brand { display:inline-flex; align-items:center; gap:10px; color:var(--paper); text-decoration:none; font-weight:700; font-size:24px; letter-spacing:-0.02em; }
+  .brand svg { width:32px; height:32px; }
+  h1 { font-size: clamp(34px, 6vw, 52px); line-height:1.05; letter-spacing:-0.03em; margin: 34px 0 6px; text-wrap: balance; }
+  h2 { font-size: 24px; letter-spacing:-0.015em; margin: 40px 0 8px; }
+  p, ul { margin: 0 0 14px; }
+  ul { padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  .meta { color: var(--muted); font-size: 15px; margin-bottom: 26px; }
+  .note { border-left: 3px solid var(--ember); background: var(--panel); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 22px 0; }
+  footer { padding-top: 40px; padding-bottom: 60px; color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); margin-top: 48px; }
+  footer a { margin-right: 18px; }
+  main { padding-bottom: 8px; }
+</style>
+</head>
+<body>
+<header><a class="brand" href="/" aria-label="NearHi home"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>NearHi</a></header>
+<main>
+<h1>Privacy Policy</h1>
+<p class="meta">Last updated: October 2026</p>
+<p>NearHi lets two adults talk by video and text. This page says what the service handles and why. There is no account, so we never ask for your name, email address or phone number.</p>
+
+<h2>What we handle</h2>
+<ul>
+  <li><strong>Your location.</strong> When you press Start, your browser shares your device's position, with your permission, so we can find people inside the distance you chose. It is held while you wait and removed when you are matched, skip, stop, or disconnect. The other person is never told it.</li>
+  <li><strong>A random browser ID.</strong> The first time you visit, your browser makes a random ID and keeps it in its own storage. It is not linked to your name or to any account. We use it to recognise a browser that has been blocked for breaking the rules, and to attach reports to the right browser.</li>
+  <li><strong>A scrambled version of your IP address.</strong> We scramble your IP address with a secret value and never store the readable address. While you are connected the scrambled version is held in memory. It is saved only if someone reports you, or if you are blocked.</li>
+  <li><strong>Chat messages.</strong> They pass through our server so they can reach the other person, and we do not store them. Each message is also sent to OpenAI's moderation service for an automatic safety check. If a message is flagged it is not delivered, and a counter against your random browser ID goes up. The text itself is not kept.</li>
+  <li><strong>Video and audio.</strong> They travel between the two browsers, encrypted. We do not record them. If two browsers cannot connect directly, the call is relayed through a relay service instead, still encrypted, and still not recorded by us.</li>
+  <li><strong>Safety screening of video.</strong> During a call, your browser takes a small still image of the other person's video every few seconds and sends it to our server. The server passes it to OpenAI's moderation service and discards it. We do not save these images. If one is flagged, the call ends and the other person's browser ID is flagged for review. Automatic screening makes mistakes in both directions.</li>
+  <li><strong>Reports.</strong> When you press Report, or the screening flags something, we store the reported browser's random ID and scrambled IP address, the reporter's random ID, a short reason and the time. Reports are kept until they are reviewed, and only the newest 500 are kept.</li>
+  <li><strong>Blocks.</strong> A blocked random ID or scrambled IP address stays on a block list until the block is removed.</li>
+</ul>
+
+<div class="note"><strong>Your network address is visible during a call.</strong> Because video connects your browser directly to the other person's, they can see your IP address, which can reveal roughly where you are, such as your city or internet provider. This is how direct video calls work. If that worries you, use a VPN, or do not start a call.</div>
+
+<h2>Services we rely on</h2>
+<ul>
+  <li><strong>Railway</strong> hosts the site and its database.</li>
+  <li><strong>OpenAI</strong> runs the automatic checks on chat messages and video stills. Their own policies apply to what they receive.</li>
+  <li><strong>Google</strong> runs a public server that helps browsers find each other for direct calls. It sees your IP address when your browser contacts it.</li>
+  <li><strong>Metered</strong> may relay calls that cannot connect directly.</li>
+  <li><strong>GoDaddy</strong> provides the domain name.</li>
+</ul>
+<p>We do not use advertising, analytics trackers or cookies. Fonts are served from our own site.</p>
+
+<h2>Your choices</h2>
+<ul>
+  <li>Clearing your browser's site data gives you a new random ID. This is also how a blocked browser could come back, which is a known limit of having no accounts.</li>
+  <li>If you refuse location or camera access, NearHi cannot work, because matching needs your location and calls need your camera.</li>
+  <li>To ask a question, or to ask us to look at a report or block that involves you, write to <a href="mailto:YOUR_CONTACT_EMAIL_HERE">YOUR_CONTACT_EMAIL_HERE</a>. Since we hold nothing tied to your identity, we may need the random browser ID to find a record.</li>
+</ul>
+
+<h2>Under 18</h2>
+<p>NearHi is for adults only. We cannot check age, so please do not use it if you are under 18. If you think a minor is using it, tell us at <a href="mailto:YOUR_CONTACT_EMAIL_HERE">YOUR_CONTACT_EMAIL_HERE</a>.</p>
+
+<h2>Changes</h2>
+<p>If this page changes, the date at the top will change with it.</p>
+</main>
+<footer>
+  <a href="/">Home</a><a href="/terms/">Terms of Use</a><a href="/talk/">Start talking</a>
+</footer>
+</body>
+</html>
