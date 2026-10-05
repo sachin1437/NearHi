@@ -262,6 +262,18 @@ let frameTimer = null;
 let frameFirstTimer = null;
 const frameCanvas = document.createElement('canvas');
 
+// Connection handling. The socket can die at any moment (a phone's screen locks, the tab goes to
+// the background, Wi-Fi changes, the server redeploys), so the page reconnects by itself and
+// never sends on a dead socket.
+let reconnectTimer = null;
+let reconnectDelay = 1000;
+let pingTimer = null;
+let pongTimer = null;
+let serverPongs = false;   // only expect replies from a server that says it sends them
+let banned = false;
+const PING_EVERY_MS = 25000;
+const PONG_WITHIN_MS = 10000;
+
 // A per-browser id, not an account. Lets a ban actually mean something across
 // sessions; cleared if the person clears site data, by design, this is not
 // meant to identify anyone, only to let bad actors be turned away faster.
@@ -291,7 +303,7 @@ async function loadIceServers() {
 // Screening what we receive (not what we send) is what protects the person watching,
 // because someone running a modified page could simply skip checking their own camera.
 function sendFrame() {
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!socketOpen()) return;
   if (!document.body.classList.contains('matched')) return;
   if (!remoteVideo.videoWidth || remoteVideo.readyState < 2) return;
   const width = 320;
@@ -299,7 +311,7 @@ function sendFrame() {
   frameCanvas.width = width;
   frameCanvas.height = height;
   frameCanvas.getContext('2d').drawImage(remoteVideo, 0, 0, width, height);
-  ws.send(JSON.stringify({ type: 'frame', data: frameCanvas.toDataURL('image/jpeg', 0.6) }));
+  send({ type: 'frame', data: frameCanvas.toDataURL('image/jpeg', 0.6) });
 }
 
 function startFrameScreening() {
@@ -322,11 +334,74 @@ function log(msg) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+function socketOpen() {
+  return !!ws && ws.readyState === WebSocket.OPEN;
+}
+
+// The one way the page sends anything. Returns false, and sends nothing, if the connection is down.
+function send(payload) {
+  if (!socketOpen()) return false;
+  ws.send(JSON.stringify(payload));
+  return true;
+}
+
+// Whatever we were doing is gone on the server's side, and a call can't survive a dropped
+// connection, so reset it. A search that was in progress is resumed once we reconnect.
+function connectionLost() {
+  clearInterval(pingTimer);
+  clearTimeout(pongTimer);
+  teardownPeer();
+  document.body.classList.remove('matched');
+  skipBtn.disabled = true;
+  reportBtn.disabled = true;
+  statusEl.textContent = 'Connection lost. Reconnecting...';
+}
+
+function reconnectNow() {
+  if (banned) return;
+  clearTimeout(reconnectTimer);
+  if (!ws || ws.readyState > WebSocket.OPEN) {
+    reconnectDelay = 1000;
+    connect();
+  }
+}
+
+// A socket can look open long after the network killed it. Ask the server to answer, and if
+// it doesn't in time, throw the socket away and start over.
+function checkAlive(withinMs) {
+  if (!socketOpen()) { reconnectNow(); return; }
+  send({ type: 'ping' });
+  if (!serverPongs) return;
+  clearTimeout(pongTimer);
+  pongTimer = setTimeout(() => {
+    const dead = ws;
+    if (dead) { dead.onclose = null; dead.onmessage = null; try { dead.close(); } catch (e) { /* already gone */ } }
+    connectionLost();
+    reconnectDelay = 1000;
+    connect();
+  }, withinMs);
+}
+
 function connect() {
+  clearTimeout(reconnectTimer);
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
 
-  ws.onopen = () => { statusEl.textContent = 'Connected. Hit "Start talking" when you\'re ready.'; };
-  ws.onclose = () => { statusEl.textContent = 'Disconnected from server.'; };
+  ws.onopen = () => {
+    reconnectDelay = 1000;
+    clearInterval(pingTimer);
+    pingTimer = setInterval(() => checkAlive(PONG_WITHIN_MS), PING_EVERY_MS);
+    if (document.body.classList.contains('active') && lastSearch) {
+      goBackToSearching('Reconnected. Looking for someone nearby...');
+    } else {
+      statusEl.textContent = 'Connected. Hit "Start talking" when you\'re ready.';
+    }
+  };
+  ws.onclose = () => {
+    if (banned) return;
+    connectionLost();
+    reconnectTimer = setTimeout(connect, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+  };
 
   ws.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
@@ -334,6 +409,11 @@ function connect() {
     if (msg.type === 'hello') {
       videoScreening = !!msg.video_screening;
       frameIntervalMs = Number(msg.frame_interval_ms) || 5000;
+      serverPongs = !!msg.supports_ping;
+    }
+
+    if (msg.type === 'pong') {
+      clearTimeout(pongTimer);
     }
 
     if (msg.type === 'matched') {
@@ -367,6 +447,7 @@ function connect() {
     }
 
     if (msg.type === 'banned') {
+      banned = true;          // do not keep reconnecting after a ban
       stopEverything();
       findBtn.disabled = true;
       showStartError('This device or network has been restricted from NearHi.');
@@ -392,14 +473,14 @@ async function startPeerConnection(isInitiator) {
 
   pc.onicecandidate = (event) => {
     if (event.candidate) {
-      ws.send(JSON.stringify({ type: 'signal', data: { candidate: event.candidate } }));
+      send({ type: 'signal', data: { candidate: event.candidate } });
     }
   };
 
   if (isInitiator) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    ws.send(JSON.stringify({ type: 'signal', data: { sdp: offer } }));
+    send({ type: 'signal', data: { sdp: offer } });
   }
 }
 
@@ -410,7 +491,7 @@ async function handleSignal(data) {
     if (data.sdp.type === 'offer') {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      ws.send(JSON.stringify({ type: 'signal', data: { sdp: answer } }));
+      send({ type: 'signal', data: { sdp: answer } });
     }
   } else if (data.candidate) {
     try { await pc.addIceCandidate(data.candidate); } catch (e) { /* ignore late candidates */ }
@@ -440,7 +521,7 @@ function stopEverything() {
 }
 
 function sendFind() {
-  if (lastSearch) ws.send(JSON.stringify({ type: 'find', client_id: CLIENT_ID, ...lastSearch }));
+  return !!lastSearch && send({ type: 'find', client_id: CLIENT_ID, ...lastSearch });
 }
 
 // Drop the current person (if any) and go back to searching on the same screen.
@@ -491,6 +572,12 @@ findBtn.onclick = () => {
     radiusCustom.focus();
     return;
   }
+  if (!socketOpen()) {
+    showStartError('Not connected to the server yet. Reconnecting now, try again in a few seconds.');
+    statusEl.textContent = 'Reconnecting...';
+    reconnectNow();
+    return;
+  }
   statusEl.textContent = 'Allow location access when your browser asks...';
   // Some browsers never show the permission prompt and never report an error. Without this the page just sits there.
   const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
@@ -507,7 +594,13 @@ findBtn.onclick = () => {
     clearTimeout(hintTimer);
     startError.hidden = true;
     lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
-    sendFind();
+    if (!sendFind()) {
+      // the connection dropped while the browser was asking for permissions
+      stopEverything();
+      statusEl.textContent = 'Connection lost.';
+      showStartError('The connection dropped while starting. It is reconnecting, press Start talking again in a few seconds.');
+      return;
+    }
     const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
     overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
     statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
@@ -521,33 +614,46 @@ findBtn.onclick = () => {
 };
 
 stopBtn.onclick = () => {
-  ws.send(JSON.stringify({ type: 'skip' }));
+  send({ type: 'skip' });
   stopEverything();
   statusEl.textContent = 'Stopped. Hit "Start talking" to search again.';
 };
 
 skipBtn.onclick = () => {
-  ws.send(JSON.stringify({ type: 'skip' }));
+  send({ type: 'skip' });
   goBackToSearching('Skipped. Looking for someone new...');
 };
 
 reportBtn.onclick = () => {
-  ws.send(JSON.stringify({ type: 'report', reason: 'reported from call' }));
-  ws.send(JSON.stringify({ type: 'skip' }));
-  goBackToSearching('Reported. Looking for someone new...');
+  const sent = send({ type: 'report', reason: 'reported from call' });
+  send({ type: 'skip' });
+  goBackToSearching(sent
+    ? 'Reported. Looking for someone new...'
+    : 'The report could not be sent because the connection dropped. Looking for someone new...');
 };
 
 chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && chatInput.value.trim()) {
-    ws.send(JSON.stringify({ type: 'chat', data: chatInput.value }));
-    log('You: ' + chatInput.value);
-    chatInput.value = '';
+    if (send({ type: 'chat', data: chatInput.value })) {
+      log('You: ' + chatInput.value);
+      chatInput.value = '';
+    } else {
+      log('Message not sent, the connection dropped.');
+    }
   }
 });
 
 loadIceServers();
 connect();
 if (IN_APP_BROWSER) showStartError(IN_APP_MESSAGE);
+
+// Coming back to the tab (phone unlocked), the network returning, or a page restored from the
+// back/forward cache: confirm the connection is really alive instead of trusting how it looks.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkAlive(3000);
+});
+window.addEventListener('online', () => checkAlive(3000));
+window.addEventListener('pageshow', (e) => { if (e.persisted) checkAlive(3000); });
 
 // --- PiP: big/small roles are just CSS classes, the underlying video
 // elements (and their srcObject bindings above) never move in the DOM ---

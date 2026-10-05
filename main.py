@@ -309,6 +309,7 @@ async def ws_endpoint(websocket: WebSocket):
         "user_id": user_id,
         "video_screening": bool(OPENAI_API_KEY),
         "frame_interval_ms": FRAME_INTERVAL_MS,
+        "supports_ping": True,   # lets the page check the connection is really alive
     }))
 
     try:
@@ -372,6 +373,11 @@ async def ws_endpoint(websocket: WebSocket):
                 else:
                     await record_flag(identities.get(user_id, {}).get("client_id", ""))
                     await send_to(user_id, {"type": "chat_blocked"})
+
+            elif mtype == "ping":
+                # A phone can show a connection as open long after the network killed it.
+                # The page pings, and if nothing comes back it starts over.
+                await websocket.send_text(json.dumps({"type": "pong"}))
 
             elif mtype == "frame":
                 if not OPENAI_API_KEY:
