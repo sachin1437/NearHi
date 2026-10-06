@@ -84,9 +84,23 @@ Push to GitHub, then on Railway: New Project, deploy from the repo, add a Redis 
 
 **Identity.** Each browser gets a `client_id`, a random value in `localStorage`. It's not an account, there's no login or profile behind it, it only exists so a ban means something across sessions. A scrambled (salted-hash) IP is kept alongside it, never the raw address. Clearing site data resets the `client_id`.
 
-**Review.** Open `/admin/` and paste your `ADMIN_TOKEN`. You'll see each reported browser with how many reports came from people, how many were automatic, how many *different* people reported it (the number to trust most), and the latest reason. From there you can **Ban**, **Dismiss**, and **Unban**. A ban takes effect immediately and disconnects the person if they're connected. Blocking their *network* as well is off by default, because mobile carriers put many people behind one address and a network block can lock out innocent people. The same actions exist as API routes (`/admin/reports`, `/admin/bans`, `/admin/ban`, `/admin/unban`, `/admin/dismiss`) that expect `Authorization: Bearer <ADMIN_TOKEN>`.
+**Review.** Open `/admin/` and paste your `ADMIN_TOKEN`. You'll see each reported browser with how many reports came from people, how many were automatic, how many *different* people reported it (the number to trust most), and the latest reason. From there you can **Ban**, **Dismiss**, and **Unban**. A ban takes effect immediately and disconnects the person if they're connected. Blocking their *network* as well is off by default, because mobile carriers put many people behind one address and a network block can lock out innocent people. The same actions exist as API routes (`/admin/reports`, `/admin/stats`, `/admin/bans`, `/admin/ban`, `/admin/unban`, `/admin/dismiss`) that expect `Authorization: Bearer <ADMIN_TOKEN>`.
 
 **Banning is manual, not automatic.** Flags are counted and reports are queued, but nobody is banned until you decide. Automatic banning on a flag count risks banning someone over one bad judgment call, and you're the only reviewer, so check `/admin/` regularly once people are using it.
+
+## 🔧 When two people don't connect
+
+Open **Connection details** (the small arrow under the call box) on both devices and compare. It shows the page version, whether the server is reachable, how accurate the device's location is, the search radius, what the server says about who else is searching, and, once matched, the state and route of the video link.
+
+| What you see | What it means | Fix |
+|---|---|---|
+| "No one else is searching" on both | The two devices are on different servers (for example one on `localhost`, one on the live site), or one isn't actually searching | Use the same address on both |
+| "1 other person is searching, but none inside your radius" | Their location, as your device reports it, is further away than your radius. Laptops estimate location from the network and are often 5 to 50 km off | Choose a bigger radius, or Anywhere |
+| "...their search radius is smaller than the distance between you" | The other side has a smaller radius, so they can't see you back | Widen the radius on the other device too |
+| "Matched, but no video link" | Matching worked, the video can't connect. Usually a phone on mobile data and a laptop on Wi-Fi with no relay server | Set up a TURN provider (`TURN_API_KEY`, `TURN_DOMAIN`). The details box says whether one is configured. Text chat still works meanwhile |
+| "Connection lost. Reconnecting..." | The connection dropped (screen lock, network change, redeploy). It reconnects by itself | Wait a few seconds |
+
+For the live picture of the whole site, call `GET /admin/stats` with the admin token: it returns how many people are connected, how many are searching, and how many calls are in progress.
 
 ## ⚠️ Known limitations
 

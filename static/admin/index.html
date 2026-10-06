@@ -33,6 +33,8 @@
   .tag.auto { border-color:var(--ember); color:var(--ember); }
   #msg { min-height: 24px; color: var(--ember); }
   .hidden { display:none; }
+  .live { font-size:18px; margin: 0 0 8px; }
+  .live strong { color: var(--ember); }
   .wrapx { overflow-x:auto; }
 </style>
 </head>
@@ -55,6 +57,7 @@
       <button class="ghost" id="signout">Sign out</button>
       <span class="muted" id="updated"></span>
     </div>
+    <p id="live" class="live" aria-live="polite"></p>
 
     <h2>Reported browsers</h2>
     <p class="muted">Banning blocks that browser right away, and disconnects it if it is connected now. Blocking the network too can also affect other people on the same connection, so it is off unless you tick it.</p>
@@ -181,10 +184,20 @@ function renderBans(data) {
   }
 }
 
+function renderLive(stats) {
+  const live = $('live');
+  live.replaceChildren(
+    document.createTextNode('Online now '), el('strong', String(stats.connected)),
+    document.createTextNode('  \u00b7  Searching '), el('strong', String(stats.searching)),
+    document.createTextNode('  \u00b7  In calls '), el('strong', String(stats.in_calls)),
+  );
+}
+
 async function load() {
-  const [reports, bans] = await Promise.all([api('/admin/reports'), api('/admin/bans')]);
+  const [reports, bans, stats] = await Promise.all([api('/admin/reports'), api('/admin/bans'), api('/admin/stats')]);
   renderReports(reports);
   renderBans(bans);
+  renderLive(stats);
   $('login').classList.add('hidden');
   $('panel').classList.remove('hidden');
   $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -205,6 +218,12 @@ $('signin').onclick = signIn;
 $('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') signIn(); });
 $('refresh').onclick = () => load().then(() => say('')).catch(e => say(e.message));
 $('signout').onclick = () => { sessionStorage.removeItem(KEY); token = ''; location.reload(); };
+// the live numbers refresh by themselves while the page is open and you are signed in
+setInterval(() => {
+  if (token && document.visibilityState === 'visible' && !$('panel').classList.contains('hidden')) {
+    api('/admin/stats').then(renderLive).catch(() => {});
+  }
+}, 5000);
 if (token) signIn();
 </script>
 </body>

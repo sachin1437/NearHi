@@ -107,7 +107,7 @@
   .video-frame.pip:active { cursor: grabbing; }
   .video-label { position: absolute; left: 10px; bottom: 8px; font-size: 12px; background: rgba(0,0,0,.45); padding: 3px 9px; border-radius: 999px; z-index: 3; pointer-events: none; }
 
-  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(10,22,20,.88); }
+  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding-bottom: 130px; background: rgba(10,22,20,.88); }
   body.matched .radar-overlay { display: none; }
   .radar { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
   .radar .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ember); }
@@ -123,6 +123,13 @@
     body.active:not(.matched) .radar .ring { animation: none; opacity: .35; }
   }
   .overlay-text { font-size: 13px; color: var(--muted); }
+  .overlay-hint { max-width: 30ch; margin: 0; padding: 0 16px; text-align: center; font-size: 13px; line-height: 1.45; color: var(--paper); }
+  .overlay-hint:empty { display: none; }
+  .diag { margin: 22px 0 0; font-size: 13px; color: var(--muted); }
+  .diag summary { cursor: pointer; width: max-content; padding: 4px 0; }
+  .diag dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 10px 0 0; }
+  .diag dt { color: var(--muted); }
+  .diag dd { margin: 0; color: var(--paper); overflow-wrap: anywhere; }
 
   .chatbox { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 20px; overflow: hidden; }
   .chat-log { height: 160px; overflow-y: auto; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
@@ -188,14 +195,15 @@
       <div class="video-frame big" id="remoteFrame">
         <video id="remoteVideo" autoplay playsinline></video>
         <span class="video-label">Stranger</span>
-        <div class="radar-overlay" aria-hidden="true">
-          <div class="radar">
+        <div class="radar-overlay">
+          <div class="radar" aria-hidden="true">
             <span class="ring ring-1"></span>
             <span class="ring ring-2"></span>
             <span class="ring ring-3"></span>
             <span class="dot"></span>
           </div>
           <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
+          <p class="overlay-hint" id="searchHint" role="status"></p>
         </div>
       </div>
       <div class="video-frame pip" id="localFrame">
@@ -208,6 +216,11 @@
       <input id="chatInput" class="chat-input" placeholder="Type a message and hit enter" disabled>
     </div>
   </section>
+
+  <details class="diag" id="diag">
+    <summary>Connection details</summary>
+    <dl id="diagList"></dl>
+  </details>
 
 </main>
 
@@ -271,8 +284,81 @@ let pingTimer = null;
 let pongTimer = null;
 let serverPongs = false;   // only expect replies from a server that says it sends them
 let banned = false;
+let linkTimer = null;        // watches for a video link that never comes up
+const LINK_WAIT_MS = 15000;
 const PING_EVERY_MS = 25000;
 const PONG_WITHIN_MS = 10000;
+const WHERE_EVERY_MS = 8000;      // while waiting, ask how many others are searching
+
+// What the "Connection details" box shows, so a problem can be read off one screenshot.
+const PAGE_VERSION = 'diagnostics build, 5 Oct';
+const searchHint = document.getElementById('searchHint');
+const diagList = document.getElementById('diagList');
+const diag = { server: 'connecting', screening: '', accuracyM: null, radiusKm: null, searching: '', ice: 'no call yet', route: '-', relay: 'checking' };
+
+function fmtDistance(m) {
+  return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+}
+
+function renderDiag() {
+  const rows = [
+    ['Page', PAGE_VERSION],
+    ['Server', diag.server + (diag.screening ? ', ' + diag.screening : '')],
+    ['Your location', diag.accuracyM == null ? 'not read yet' : 'accurate to about ' + fmtDistance(diag.accuracyM)],
+    ['Search radius', diag.radiusKm == null ? '-' : (diag.radiusKm >= UNLIMITED_RADIUS_KM ? 'Anywhere' : diag.radiusKm + ' km')],
+    ['Others searching', diag.searching || '-'],
+    ['Video link', diag.ice],
+    ['Route', diag.route],
+    ['Relay (TURN)', diag.relay],
+  ];
+  diagList.textContent = '';
+  for (const [label, value] of rows) {
+    const dt = document.createElement('dt'); dt.textContent = label;
+    const dd = document.createElement('dd'); dd.textContent = value;
+    diagList.append(dt, dd);
+  }
+}
+
+// Plain-words reason for not having been matched yet, from the server's counts.
+function describeSearch(info) {
+  if (info.total === 0) return 'No one else is searching right now.';
+  const plural = (n, one, many) => (n === 1 ? one : many);
+  if (info.nearby === 0) {
+    let text = info.total + ' other ' + plural(info.total, 'person is', 'people are') + ' searching, but none inside your radius. Try a larger radius or Anywhere.';
+    if (diag.accuracyM != null && diag.accuracyM > 3000) {
+      text += ' Your device says it only knows your location to about ' + fmtDistance(diag.accuracyM) + '.';
+    }
+    return text;
+  }
+  return info.nearby + ' nearby ' + plural(info.nearby, 'person is', 'people are') + ' searching, but their search radius is smaller than the distance between you. They need to widen theirs too.';
+}
+
+function hasTurn(servers) {
+  return servers.some(s => [].concat(s.urls || []).some(u => /^turns?:/i.test(u)));
+}
+
+function relaySummary(seen) {
+  if (seen && seen.has('relay')) return 'working (this device found a relay route)';
+  return hasTurn(ICE_SERVERS)
+    ? 'configured, but this device found no relay route'
+    : 'none set up. Phones on mobile data often cannot reach a laptop on Wi-Fi without one';
+}
+
+async function describeRoute(conn) {
+  try {
+    const stats = await conn.getStats();
+    const byId = {};
+    let pair = null;
+    stats.forEach(r => { byId[r.id] = r; });
+    stats.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId]; });
+    if (!pair) stats.forEach(r => { if (r.type === 'candidate-pair' && r.state === 'succeeded' && (r.nominated || r.selected)) pair = r; });
+    if (!pair || conn !== pc) return;
+    const types = [byId[pair.localCandidateId], byId[pair.remoteCandidateId]].map(c => c && c.candidateType);
+    diag.route = types.includes('relay') ? 'relayed through TURN'
+      : types.every(t => t === 'host') ? 'direct, same network' : 'direct, across networks';
+  } catch (e) { /* this browser does not expose stats */ }
+  renderDiag();
+}
 
 // A per-browser id, not an account. Lets a ban actually mean something across
 // sessions; cleared if the person clears site data, by design, this is not
@@ -296,6 +382,8 @@ async function loadIceServers() {
   } catch (e) {
     // keep the STUN-only fallback above
   }
+  diag.relay = relaySummary(null);
+  renderDiag();
 }
 
 // Every few seconds, take a small still of the OTHER person's video and send it to the
@@ -355,6 +443,8 @@ function connectionLost() {
   skipBtn.disabled = true;
   reportBtn.disabled = true;
   statusEl.textContent = 'Connection lost. Reconnecting...';
+  diag.server = 'reconnecting';
+  renderDiag();
 }
 
 function reconnectNow() {
@@ -387,6 +477,8 @@ function connect() {
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
 
   ws.onopen = () => {
+    diag.server = 'connected';
+    renderDiag();
     reconnectDelay = 1000;
     clearInterval(pingTimer);
     pingTimer = setInterval(() => checkAlive(PONG_WITHIN_MS), PING_EVERY_MS);
@@ -410,6 +502,15 @@ function connect() {
       videoScreening = !!msg.video_screening;
       frameIntervalMs = Number(msg.frame_interval_ms) || 5000;
       serverPongs = !!msg.supports_ping;
+      diag.screening = videoScreening ? 'screening on' : 'screening off';
+      renderDiag();
+    }
+
+    if (msg.type === 'searching') {
+      if (document.body.classList.contains('matched')) return;
+      searchHint.textContent = describeSearch(msg);
+      diag.searching = searchHint.textContent;
+      renderDiag();
     }
 
     if (msg.type === 'pong') {
@@ -422,8 +523,11 @@ function connect() {
       skipBtn.disabled = false;
       reportBtn.disabled = false;
       document.body.classList.add('matched');
+      searchHint.textContent = '';
+      diag.searching = 'you were matched';
       await startPeerConnection(msg.initiator);
       startFrameScreening();
+
     }
 
     if (msg.type === 'signal') {
@@ -471,8 +575,40 @@ async function startPeerConnection(isInitiator) {
 
   pc.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
 
+  // Matching can succeed while the video link cannot: two networks that block direct connections
+  // (common between a phone on mobile data and a laptop on Wi-Fi) leave a black frame and, until
+  // now, a status that still said "Matched". Say what is going on instead. Text chat still works,
+  // because it goes through the server.
+  const thisConnection = pc;
+  const linkUp = () => ['connected', 'completed'].includes(thisConnection.iceConnectionState);
+  const linkProblem = () => {
+    if (pc !== thisConnection || linkUp()) return;
+    const note = 'The video link could not be set up. These two networks may be blocking direct video. Text chat still works, or press Skip to try someone else.';
+    statusEl.textContent = 'Matched, but no video link.';
+    diag.relay = relaySummary(seen);
+    renderDiag();
+    if (!chatEl.textContent.includes('video link could not')) log(note);
+  };
+  const seen = new Set();   // the kinds of route this device could find: host, srflx, relay
+  diag.ice = 'connecting';
+  diag.route = '-';
+  renderDiag();
+
+  thisConnection.oniceconnectionstatechange = () => {
+    if (pc !== thisConnection) return;
+    diag.ice = thisConnection.iceConnectionState;
+    diag.relay = relaySummary(seen);
+    if (linkUp()) { clearTimeout(linkTimer); statusEl.textContent = 'Matched. Say hi!'; describeRoute(thisConnection); }
+    else if (thisConnection.iceConnectionState === 'failed') { clearTimeout(linkTimer); linkProblem(); }
+    renderDiag();
+  };
+  clearTimeout(linkTimer);
+  linkTimer = setTimeout(linkProblem, LINK_WAIT_MS);
+
   pc.onicecandidate = (event) => {
     if (event.candidate) {
+      const kind = /typ (\w+)/.exec(event.candidate.candidate || '');
+      if (kind) seen.add(kind[1]);
       send({ type: 'signal', data: { candidate: event.candidate } });
     }
   };
@@ -500,6 +636,7 @@ async function handleSignal(data) {
 
 function teardownPeer() {
   stopFrameScreening();
+  clearTimeout(linkTimer);
   if (pc) { pc.close(); pc = null; }
   remoteVideo.srcObject = null;
   chatInput.disabled = true;
@@ -513,6 +650,7 @@ function stopEverything() {
   }
   localVideo.srcObject = null;
   chatEl.innerHTML = '';
+  searchHint.textContent = '';
   lastSearch = null;
   document.body.classList.remove('active', 'matched');
   stopBtn.disabled = true;
@@ -528,6 +666,7 @@ function sendFind() {
 function goBackToSearching(message) {
   teardownPeer();
   chatEl.innerHTML = '';
+  searchHint.textContent = '';
   document.body.classList.remove('matched');
   skipBtn.disabled = true;
   reportBtn.disabled = true;
@@ -594,6 +733,10 @@ findBtn.onclick = () => {
     clearTimeout(hintTimer);
     startError.hidden = true;
     lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
+    diag.accuracyM = pos.coords.accuracy;
+    diag.radiusKm = radiusKm;
+    diag.searching = 'asking the server...';
+    renderDiag();
     if (!sendFind()) {
       // the connection dropped while the browser was asking for permissions
       stopEverything();
@@ -643,6 +786,10 @@ chatInput.addEventListener('keydown', (e) => {
   }
 });
 
+renderDiag();
+setInterval(() => {
+  if (document.body.classList.contains('active') && !document.body.classList.contains('matched')) send({ type: 'where' });
+}, WHERE_EVERY_MS);
 loadIceServers();
 connect();
 if (IN_APP_BROWSER) showStartError(IN_APP_MESSAGE);

@@ -173,6 +173,18 @@ async def find_match(user_id: str, lat: float, lon: float, radius_km: float) -> 
     return None
 
 
+async def pool_snapshot(user_id: str, lat: float, lon: float, radius_km: float) -> dict:
+    """Counts only, for the 'why haven't I been matched' message: how many other people are
+    searching right now, and how many of those are inside this person's radius. Never positions."""
+    total = max(0, await redis_client.zcard(WAITING_GEO_KEY) - 1)
+    inside = await redis_client.geosearch(
+        WAITING_GEO_KEY, longitude=lon, latitude=lat, radius=radius_km, unit="km"
+    )
+    recent = await redis_client.smembers(RECENT_PREFIX + user_id)
+    nearby = sum(1 for c in inside if c != user_id and c not in recent)
+    return {"total": total, "nearby": nearby}
+
+
 async def pair_users(a: str, b: str):
     await remove_from_pool(a)
     await remove_from_pool(b)
@@ -355,6 +367,10 @@ async def ws_endpoint(websocket: WebSocket):
                         break  # someone else already paired us, they send the notifications
                     # otherwise that candidate was taken by someone else, look again
 
+                if await redis_client.zscore(WAITING_GEO_KEY, user_id) is not None:
+                    # still waiting: say how many others are searching, so the page can explain
+                    await send_to(user_id, {"type": "searching", **await pool_snapshot(user_id, lat, lon, radius_km)})
+
             elif mtype == "signal":
                 peer_id = await redis_client.get(ROOM_PREFIX + user_id)
                 if peer_id:
@@ -373,6 +389,15 @@ async def ws_endpoint(websocket: WebSocket):
                 else:
                     await record_flag(identities.get(user_id, {}).get("client_id", ""))
                     await send_to(user_id, {"type": "chat_blocked"})
+
+            elif mtype == "where":
+                # the page asks again every so often while someone waits, so the message stays current
+                meta = await redis_client.hgetall(WAITING_META_PREFIX + user_id)
+                pos = await redis_client.geopos(WAITING_GEO_KEY, user_id)
+                if meta and pos and pos[0]:
+                    lon, lat = pos[0]
+                    snapshot = await pool_snapshot(user_id, lat, lon, float(meta.get("radius_km", MIN_RADIUS_KM)))
+                    await send_to(user_id, {"type": "searching", **snapshot})
 
             elif mtype == "ping":
                 # A phone can show a connection as open long after the network killed it.
@@ -502,6 +527,20 @@ async def admin_reports():
         "reports": list(reversed(reports)),
         "report_counts_by_client_id": counts,
         "flag_counts_by_client_id": flags,
+    }
+
+
+@app.get("/admin/stats", dependencies=[Depends(require_admin)])
+async def admin_stats():
+    """Live counts, for working out why two people are not meeting: how many are connected,
+    how many are waiting in the search pool, and how many calls are in progress."""
+    in_rooms = 0
+    async for _ in redis_client.scan_iter(match=ROOM_PREFIX + "*", count=500):
+        in_rooms += 1
+    return {
+        "connected": len(connections),
+        "searching": await redis_client.zcard(WAITING_GEO_KEY),
+        "in_calls": in_rooms // 2,   # each call has one room key per person
     }
 
 
