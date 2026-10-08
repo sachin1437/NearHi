@@ -2,14 +2,16 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import secrets
 import time
 import uuid
 from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 import redis.asyncio as redis
-from fastapi import Depends, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -59,6 +61,20 @@ MAX_PENDING_REPORTS = 500              # oldest reports drop off past this, so t
 MIN_RADIUS_KM = 10
 MAX_RADIUS_KM = 20050                  # more than half the Earth's circumference, i.e. "anywhere"
 RECENT_SKIP_TTL_SECONDS = 60           # don't re-match the same pair right after a skip
+
+# Reach statistics: plain counters per day, no cookies, nothing personal stored.
+STATS_PREFIX = "stats:"
+STATS_KEEP_DAYS = 180
+MAX_SOURCES_PER_DAY = 200              # cap on distinct link tags / referring sites per day, so junk can't pile up
+try:
+    STATS_UTC_OFFSET_MINUTES = int(os.environ.get("STATS_UTC_OFFSET_MINUTES", "330"))  # 330 = India (IST)
+except ValueError:
+    STATS_UTC_OFFSET_MINUTES = 330
+VISIT_PATHS = {"/", "/talk/", "/terms/", "/privacy/"}
+SOURCE_TAG = re.compile(r"^[a-z0-9][a-z0-9_-]{0,23}$")
+HOST_NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{0,60}$")
+# Only bots that run JavaScript can reach the visit counter at all; this drops the common ones.
+BOT_AGENT = re.compile(r"bot|crawl|spider|slurp|headless|lighthouse|monitor|uptime|curl|wget|python-requests|httpx", re.I)
 
 app = FastAPI()
 redis_client: Optional["redis.Redis"] = None
@@ -220,6 +236,72 @@ def client_ip(websocket: WebSocket) -> str:
     return websocket.client.host if websocket.client else "unknown"
 
 
+def stats_day(ts: Optional[float] = None) -> str:
+    """The calendar day a count belongs to, in the configured time zone (India by default)."""
+    moment = (time.time() if ts is None else ts) + STATS_UTC_OFFSET_MINUTES * 60
+    return time.strftime("%Y-%m-%d", time.gmtime(moment))
+
+
+async def bump(field: str, amount: int = 1):
+    """Add to today's count of something. Statistics must never be the reason a call or page fails."""
+    try:
+        key = f"{STATS_PREFIX}{stats_day()}"
+        await redis_client.hincrby(key, field, amount)
+        await redis_client.expire(key, STATS_KEEP_DAYS * 86400)
+    except Exception:
+        pass
+
+
+async def count_unique(name: str, value: str, day: Optional[str] = None):
+    """Count distinct values (people) without keeping any of them: Redis HyperLogLog stores
+    a small summary, from which the values cannot be read back."""
+    if not value:
+        return
+    try:
+        day = day or stats_day()
+        key = f"{STATS_PREFIX}{day}:{name}"
+        await redis_client.pfadd(key, f"{BAN_SALT}:{day}:{value}")
+        await redis_client.expire(key, STATS_KEEP_DAYS * 86400)
+    except Exception:
+        pass
+
+
+async def count_source(kind: str, name: str, visitor: str):
+    """Count a distinct visitor arriving from a tagged link ('ref') or another website ('host')."""
+    try:
+        day = stats_day()
+        names_key = f"{STATS_PREFIX}{day}:src:{kind}"
+        if not await redis_client.sismember(names_key, name) and await redis_client.scard(names_key) >= MAX_SOURCES_PER_DAY:
+            return
+        await redis_client.sadd(names_key, name)
+        await redis_client.expire(names_key, STATS_KEEP_DAYS * 86400)
+        await count_unique(f"src:{kind}:{name}", visitor, day)
+    except Exception:
+        pass
+
+
+async def record_peak(online: int):
+    try:
+        key = f"{STATS_PREFIX}{stats_day()}"
+        current = await redis_client.hget(key, "peak_online")
+        if current is None or online > int(current):
+            await redis_client.hset(key, "peak_online", online)
+            await redis_client.expire(key, STATS_KEEP_DAYS * 86400)
+    except Exception:
+        pass
+
+
+def is_ignored(user_id: str) -> bool:
+    """True for someone who asked, from the admin page, not to be counted (that is you, testing)."""
+    return bool(identities.get(user_id, {}).get("ignore"))
+
+
+async def count_match(a: str, b: str):
+    if is_ignored(a) and is_ignored(b):
+        return
+    await bump("matches")
+
+
 async def is_banned(client_id: str, ip_hash: str) -> bool:
     if client_id and await redis_client.sismember(BANNED_CLIENTS_KEY, client_id):
         return True
@@ -298,6 +380,7 @@ async def screen_frame(user_id: str, peer_id: str, data_url: str):
     if await redis_client.get(ROOM_PREFIX + user_id) != peer_id:
         return
     reported = identities.get(peer_id, {})
+    await bump("flagged_video")
     await record_flag(reported.get("client_id", ""))
     await record_report(
         reported=reported,
@@ -316,6 +399,7 @@ async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
     user_id = str(uuid.uuid4())
     connections[user_id] = websocket
+    await record_peak(len(connections))
     await websocket.send_text(json.dumps({
         "type": "hello",
         "user_id": user_id,
@@ -336,7 +420,7 @@ async def ws_endpoint(websocket: WebSocket):
                 # chance to load or generate its stored client_id first.
                 client_id = str(msg.get("client_id") or "")[:128]
                 ip_hash = hash_ip(client_ip(websocket))
-                identities[user_id] = {"client_id": client_id, "ip_hash": ip_hash}
+                identities[user_id] = {"client_id": client_id, "ip_hash": ip_hash, "ignore": bool(msg.get("ignore"))}
 
                 if await is_banned(client_id, ip_hash):
                     await websocket.send_text(json.dumps({"type": "banned"}))
@@ -346,6 +430,10 @@ async def ws_endpoint(websocket: WebSocket):
                 lat = float(msg["lat"])
                 lon = float(msg["lon"])
                 radius_km = clamp_radius(msg.get("radius_km"))
+
+                if not is_ignored(user_id):
+                    await bump("searches")
+                    await count_unique("searchers", client_id)
 
                 await redis_client.geoadd(WAITING_GEO_KEY, (lon, lat, user_id))
                 await redis_client.hset(
@@ -359,6 +447,7 @@ async def ws_endpoint(websocket: WebSocket):
                         break  # nobody suitable right now, stay in the pool
                     if await claim_pair(user_id, peer_id):
                         await pair_users(user_id, peer_id)
+                        await count_match(user_id, peer_id)
                         initiator = user_id < peer_id  # deterministic, both sides agree
                         await send_to(user_id, {"type": "matched", "peer_id": peer_id, "initiator": initiator})
                         await send_to(peer_id, {"type": "matched", "peer_id": user_id, "initiator": not initiator})
@@ -386,9 +475,19 @@ async def ws_endpoint(websocket: WebSocket):
                 text = text[:2000]
                 if await check_message(text):
                     await send_to(peer_id, {"type": "chat", "data": text})
+                    if not is_ignored(user_id):
+                        await bump("chats")
                 else:
                     await record_flag(identities.get(user_id, {}).get("client_id", ""))
                     await send_to(user_id, {"type": "chat_blocked"})
+                    if not is_ignored(user_id):
+                        await bump("flagged_chat")
+
+            elif mtype == "link":
+                # The page says whether the video link came up or not, which is how you can see
+                # whether people are actually getting video, not just getting matched.
+                if not is_ignored(user_id):
+                    await bump("link_up" if msg.get("ok") else "link_failed")
 
             elif mtype == "where":
                 # the page asks again every so often while someone waits, so the message stays current
@@ -428,6 +527,7 @@ async def ws_endpoint(websocket: WebSocket):
             elif mtype == "report":
                 peer_id = await redis_client.get(ROOM_PREFIX + user_id)
                 if peer_id:
+                    await bump("reports")
                     await record_report(
                         reported=identities.get(peer_id, {}),
                         reporter=identities.get(user_id, {}),
@@ -499,6 +599,37 @@ async def kick_matching(client_id: str, ip_hash: str):
                     pass
 
 
+@app.post("/hit", status_code=204)
+async def hit(request: Request):
+    """Counts one page visit. No cookies, and nothing personal is kept: the visitor is counted
+    through a HyperLogLog (a count with no way to read the values back), mixed with a secret that
+    changes daily. Everything about it is best effort and silent, it must never break a page."""
+    try:
+        body = await request.body()
+        data = json.loads(body) if 0 < len(body) <= 2000 else {}
+        if not isinstance(data, dict) or data.get("path") not in VISIT_PATHS:
+            return Response(status_code=204)
+        agent = request.headers.get("user-agent", "")[:300]
+        if BOT_AGENT.search(agent):
+            await bump("bot_hits")
+            return Response(status_code=204)
+        # the random browser id when the page sent one, otherwise IP and browser type as a fallback
+        visitor = str(data.get("id") or "")[:128] or f"{client_ip(request)}|{agent}"
+        await count_unique("visitors", visitor)
+        await bump("views")
+        await bump(f"views:{data['path']}")
+        tag = str(data.get("ref") or "").strip().lower()
+        if SOURCE_TAG.match(tag):
+            await count_source("ref", tag, visitor)
+        host = (urlparse(str(data.get("from") or "")).hostname or "").lower()
+        own = (request.headers.get("host") or "").split(":")[0].lower()
+        if host and host != own and HOST_NAME.match(host):
+            await count_source("host", host, visitor)
+    except Exception:
+        pass
+    return Response(status_code=204)
+
+
 @app.get("/status")
 async def status():
     """Lets you confirm the safety settings took effect on the live site. Booleans only, nothing secret."""
@@ -541,6 +672,47 @@ async def admin_stats():
         "connected": len(connections),
         "searching": await redis_client.zcard(WAITING_GEO_KEY),
         "in_calls": in_rooms // 2,   # each call has one room key per person
+    }
+
+
+@app.get("/admin/reach", dependencies=[Depends(require_admin)])
+async def admin_reach(days: int = 14):
+    """Daily counts for the last few days, plus where visitors came from. Visitors are people
+    counted once per day; a person who comes back on another day counts again."""
+    days = max(1, min(days, 90))
+    rows = []
+    sources = {"ref": {}, "host": {}}
+    for back in range(days):
+        day = stats_day(time.time() - back * 86400)
+        h = await redis_client.hgetall(f"{STATS_PREFIX}{day}")
+        number = lambda field: int(h.get(field, 0))
+        rows.append({
+            "day": day,
+            "visitors": await redis_client.pfcount(f"{STATS_PREFIX}{day}:visitors"),
+            "views": number("views"),
+            "landing_views": number("views:/"),
+            "app_views": number("views:/talk/"),
+            "searchers": await redis_client.pfcount(f"{STATS_PREFIX}{day}:searchers"),
+            "searches": number("searches"),
+            "matches": number("matches"),
+            "link_up": number("link_up"),
+            "link_failed": number("link_failed"),
+            "chats": number("chats"),
+            "flagged_chat": number("flagged_chat"),
+            "flagged_video": number("flagged_video"),
+            "reports": number("reports"),
+            "peak_online": number("peak_online"),
+            "bot_hits": number("bot_hits"),
+        })
+        for kind in ("ref", "host"):
+            for name in await redis_client.smembers(f"{STATS_PREFIX}{day}:src:{kind}"):
+                count = await redis_client.pfcount(f"{STATS_PREFIX}{day}:src:{kind}:{name}")
+                sources[kind][name] = sources[kind].get(name, 0) + count
+    top = lambda d: sorted(d.items(), key=lambda kv: (-kv[1], kv[0]))[:25]
+    return {
+        "utc_offset_minutes": STATS_UTC_OFFSET_MINUTES,
+        "days": rows,
+        "sources": {"ref": top(sources["ref"]), "host": top(sources["host"])},
     }
 
 

@@ -36,6 +36,11 @@
   .live { font-size:18px; margin: 0 0 8px; }
   .live strong { color: var(--ember); }
   .wrapx { overflow-x:auto; }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 600; background: rgba(255,255,255,.04); }
 </style>
 </head>
 <body>
@@ -59,14 +64,29 @@
     </div>
     <p id="live" class="live" aria-live="polite"></p>
 
+    <h2>Reach</h2>
+    <p class="muted" id="reachNote"></p>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Reach by day"><table id="reach"><thead><tr>
+      <th>Day</th><th class="num">Visitors</th><th class="num">Page views</th><th class="num">Searchers</th>
+      <th class="num">Searches</th><th class="num">Matches</th><th class="num">Video worked</th><th class="num">No video</th><th class="num">Peak online</th>
+    </tr></thead><tbody></tbody></table></div>
+    <div class="two">
+      <div><h3>Tagged links</h3><div class="wrapx" tabindex="0" role="region" aria-label="Tagged links"><table id="refs"><thead><tr><th>Tag</th><th class="num">Visits</th></tr></thead><tbody></tbody></table></div></div>
+      <div><h3>Other websites</h3><div class="wrapx" tabindex="0" role="region" aria-label="Other websites"><table id="hosts"><thead><tr><th>Site</th><th class="num">Visits</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+    <div class="bar" style="margin-top:18px">
+      <button class="ghost" id="ignoreBtn"></button>
+      <span class="muted" id="ignoreState"></span>
+    </div>
+
     <h2>Reported browsers</h2>
     <p class="muted">Banning blocks that browser right away, and disconnects it if it is connected now. Blocking the network too can also affect other people on the same connection, so it is off unless you tick it.</p>
-    <div class="wrapx"><table id="reports"><thead><tr>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Reported browsers"><table id="reports"><thead><tr>
       <th>Browser ID</th><th>Reports</th><th>Flags</th><th>Latest</th><th>Action</th>
     </tr></thead><tbody></tbody></table></div>
 
     <h2>Banned</h2>
-    <div class="wrapx"><table id="bans"><thead><tr><th>Type</th><th>Value</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Banned"><table id="bans"><thead><tr><th>Type</th><th>Value</th><th>Action</th></tr></thead><tbody></tbody></table></div>
   </section>
 </main>
 
@@ -193,11 +213,69 @@ function renderLive(stats) {
   );
 }
 
+function utcLabel(minutes) {
+  const sign = minutes < 0 ? '-' : '+';
+  const abs = Math.abs(minutes);
+  return 'UTC' + sign + Math.floor(abs / 60) + (abs % 60 ? ':' + String(abs % 60).padStart(2, '0') : '');
+}
+
+function renderReach(data) {
+  $('reachNote').textContent =
+    'Visitors are people counted once per day, so someone who returns tomorrow counts again. Days follow ' +
+    utcLabel(data.utc_offset_minutes) + '. Video worked / No video counts calls where the video link did or did not come up within 15 seconds. ' +
+    'Add ?ref=any-name to a link you share (for example /?ref=lpu-hostel) to see how many people each group brings.';
+
+  const body = $('reach').querySelector('tbody');
+  body.replaceChildren();
+  const sum = (f) => data.days.reduce((n, d) => n + d[f], 0);
+  const cells = (d, label) => [label, d.visitors, d.views, d.searchers, d.searches, d.matches, d.link_up, d.link_failed, d.peak_online];
+  const addRow = (values, className) => {
+    const tr = el('tr', undefined, className);
+    values.forEach((v, i) => tr.append(el('td', String(v), i ? 'num' : undefined)));
+    body.append(tr);
+  };
+  data.days.forEach((d, i) => addRow(cells(d, i === 0 ? 'Today' : d.day)));
+  addRow([
+    data.days.length + '-day total', sum('visitors'), sum('views'), sum('searchers'), sum('searches'),
+    sum('matches'), sum('link_up'), sum('link_failed'), Math.max(...data.days.map(d => d.peak_online)),
+  ], 'total');
+
+  for (const [id, rows, empty] of [['refs', data.sources.ref, 'No tagged links used yet.'], ['hosts', data.sources.host, 'No visits from other websites yet.']]) {
+    const tb = $(id).querySelector('tbody');
+    tb.replaceChildren();
+    if (!rows.length) { const tr = el('tr'); const td = el('td', empty, 'muted'); td.colSpan = 2; tr.append(td); tb.append(tr); continue; }
+    for (const [name, count] of rows) {
+      const tr = el('tr');
+      tr.append(el('td', name), el('td', String(count), 'num'));
+      tb.append(tr);
+    }
+  }
+}
+
+function renderIgnore() {
+  let ignored = false;
+  try { ignored = !!localStorage.getItem('nearhi_ignore'); } catch (e) { /* storage unavailable */ }
+  $('ignoreBtn').textContent = ignored ? 'Count my visits again' : "Don't count my visits on this browser";
+  $('ignoreState').textContent = ignored
+    ? 'This browser is not counted, so your own testing stays out of the numbers.'
+    : 'This browser is counted, so your own testing is in the numbers.';
+}
+
+$('ignoreBtn').onclick = () => {
+  try {
+    if (localStorage.getItem('nearhi_ignore')) localStorage.removeItem('nearhi_ignore');
+    else localStorage.setItem('nearhi_ignore', '1');
+  } catch (e) { say('This browser does not allow storing that setting.'); }
+  renderIgnore();
+};
+
 async function load() {
-  const [reports, bans, stats] = await Promise.all([api('/admin/reports'), api('/admin/bans'), api('/admin/stats')]);
+  const [reports, bans, stats, reach] = await Promise.all([api('/admin/reports'), api('/admin/bans'), api('/admin/stats'), api('/admin/reach?days=14')]);
   renderReports(reports);
   renderBans(bans);
   renderLive(stats);
+  renderReach(reach);
+  renderIgnore();
   $('login').classList.add('hidden');
   $('panel').classList.remove('hidden');
   $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();

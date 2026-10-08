@@ -145,6 +145,7 @@
     .topbar-right { flex-wrap: wrap; justify-content: flex-end; }
   }
 </style>
+<script src="/hit.js" defer></script>
 </head>
 <body class="idle">
 <main class="app">
@@ -371,6 +372,7 @@ function getClientId() {
   }
   return id;
 }
+const IGNORED = (() => { try { return !!localStorage.getItem('nearhi_ignore'); } catch (e) { return false; } })();
 const CLIENT_ID = getClientId(); // where and how far we are searching, reused to find the next person
 let ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // fallback until /ice-servers loads
 
@@ -580,11 +582,14 @@ async function startPeerConnection(isInitiator) {
   // now, a status that still said "Matched". Say what is going on instead. Text chat still works,
   // because it goes through the server.
   const thisConnection = pc;
+  let linkReported = false;
+  const reportLink = (ok) => { if (!linkReported) { linkReported = true; send({ type: 'link', ok }); } };
   const linkUp = () => ['connected', 'completed'].includes(thisConnection.iceConnectionState);
   const linkProblem = () => {
     if (pc !== thisConnection || linkUp()) return;
     const note = 'The video link could not be set up. These two networks may be blocking direct video. Text chat still works, or press Skip to try someone else.';
     statusEl.textContent = 'Matched, but no video link.';
+    reportLink(false);
     diag.relay = relaySummary(seen);
     renderDiag();
     if (!chatEl.textContent.includes('video link could not')) log(note);
@@ -598,7 +603,7 @@ async function startPeerConnection(isInitiator) {
     if (pc !== thisConnection) return;
     diag.ice = thisConnection.iceConnectionState;
     diag.relay = relaySummary(seen);
-    if (linkUp()) { clearTimeout(linkTimer); statusEl.textContent = 'Matched. Say hi!'; describeRoute(thisConnection); }
+    if (linkUp()) { clearTimeout(linkTimer); statusEl.textContent = 'Matched. Say hi!'; reportLink(true); describeRoute(thisConnection); }
     else if (thisConnection.iceConnectionState === 'failed') { clearTimeout(linkTimer); linkProblem(); }
     renderDiag();
   };
@@ -659,7 +664,7 @@ function stopEverything() {
 }
 
 function sendFind() {
-  return !!lastSearch && send({ type: 'find', client_id: CLIENT_ID, ...lastSearch });
+  return !!lastSearch && send({ type: 'find', client_id: CLIENT_ID, ...lastSearch, ...(IGNORED ? { ignore: true } : {}) });
 }
 
 // Drop the current person (if any) and go back to searching on the same screen.

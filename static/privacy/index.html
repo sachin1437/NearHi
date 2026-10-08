@@ -31,6 +31,7 @@
   footer a { margin-right: 18px; }
   main { padding-bottom: 8px; }
 </style>
+<script src="/hit.js" defer></script>
 </head>
 <body>
 <header><a class="brand" href="/" aria-label="NearHi home"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>NearHi</a></header>
@@ -48,6 +49,7 @@
   <li><strong>Video and audio.</strong> They travel between the two browsers, encrypted. We do not record them. If two browsers cannot connect directly, the call is relayed through a relay service instead, still encrypted, and still not recorded by us.</li>
   <li><strong>Safety screening of video.</strong> During a call, your browser takes a small still image of the other person's video every few seconds and sends it to our server. The server passes it to OpenAI's moderation service and discards it. We do not save these images. If one is flagged, the call ends and the other person's browser ID is flagged for review. Automatic screening makes mistakes in both directions.</li>
   <li><strong>Reports.</strong> When you press Report, or the screening flags something, we store the reported browser's random ID and scrambled IP address, the reporter's random ID, a short reason and the time. Reports are kept until they are reviewed, and only the newest 500 are kept.</li>
+  <li><strong>Visit and usage counts.</strong> To see how many people use NearHi, each page load sends a small note to our own server. The server counts your random browser ID through a counter that cannot be read back, mixed with a secret that changes every day, so a visit cannot be tied to you or followed from one day to the next. It also counts which page was opened and which website or link tag you arrived from, and it keeps running totals such as searches, matches, messages, and whether video connected. These are totals only. No message text, location or video is part of them. If you would rather not be counted, you can block requests to <code>/hit</code> with a content blocker.</li>
   <li><strong>Blocks.</strong> A blocked random ID or scrambled IP address stays on a block list until the block is removed.</li>
 </ul>
 
@@ -61,7 +63,7 @@
   <li><strong>Metered</strong> may relay calls that cannot connect directly.</li>
   <li><strong>GoDaddy</strong> provides the domain name.</li>
 </ul>
-<p>We do not use advertising, analytics trackers or cookies. Fonts are served from our own site.</p>
+<p>We do not use advertising, third-party analytics or cookies, and fonts are served from our own site. The counting described above runs on our own server.</p>
 
 <h2>Your choices</h2>
 <ul>
