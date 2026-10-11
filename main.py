@@ -58,6 +58,7 @@ FLAGGED_COUNT_PREFIX = "flagged:"      # client_id -> count of moderation-flagge
 REPORTS_KEY = "reports:pending"        # list of pending report records, newest last
 MAX_PENDING_REPORTS = 500              # oldest reports drop off past this, so the list can't grow forever
 
+TOLERANCE_CAP_KM = 30   # most extra distance a pair may get to allow for inaccurate device locations
 MIN_RADIUS_KM = 10
 MAX_RADIUS_KM = 20050                  # more than half the Earth's circumference, i.e. "anywhere"
 RECENT_SKIP_TTL_SECONDS = 60           # don't re-match the same pair right after a skip
@@ -138,6 +139,31 @@ async def remove_from_pool(user_id: str):
     await redis_client.delete(WAITING_META_PREFIX + user_id)
 
 
+def clamp_accuracy_km(value) -> float:
+    """How far off a device says its own position might be, in km (the page sends metres).
+    Capped, so nobody can claim a huge error to reach people outside their radius."""
+    try:
+        metres = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if metres != metres or metres < 0:  # NaN or negative
+        return 0.0
+    return min(metres / 1000.0, TOLERANCE_CAP_KM)
+
+
+def pair_slack_km(acc_a_km: float, acc_b_km: float) -> float:
+    """Two positions can each be off, so a pair is allowed a little extra distance:
+    the sum of both errors, never more than TOLERANCE_CAP_KM in total."""
+    return min(TOLERANCE_CAP_KM, acc_a_km + acc_b_km)
+
+
+def meta_accuracy_km(meta: dict) -> float:
+    try:
+        return max(0.0, min(float(meta.get("acc_km", 0)), TOLERANCE_CAP_KM))
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def clamp_radius(value) -> float:
     """Server-side radius limits. The UI enforces these too, but a client can
     send anything over the socket."""
@@ -160,14 +186,16 @@ async def mark_recent(a: str, b: str):
         await redis_client.expire(RECENT_PREFIX + user, RECENT_SKIP_TTL_SECONDS)
 
 
-async def find_match(user_id: str, lat: float, lon: float, radius_km: float) -> Optional[str]:
-    """Find a waiting user within radius_km whose own radius also covers us
-    (mutual match, not one-sided)."""
+async def find_match(user_id: str, lat: float, lon: float, radius_km: float, acc_km: float = 0.0) -> Optional[str]:
+    """Find a waiting user inside radius_km whose own radius also covers us
+    (mutual match, not one-sided). Both radii get the pair's location slack, because a
+    laptop's position is often off by several km and two devices on one desk can read
+    as further apart than the radius."""
     candidates = await redis_client.geosearch(
         WAITING_GEO_KEY,
         longitude=lon,
         latitude=lat,
-        radius=radius_km,
+        radius=radius_km + TOLERANCE_CAP_KM,
         unit="km",
         sort="ASC",
         withdist=True,
@@ -184,20 +212,35 @@ async def find_match(user_id: str, lat: float, lon: float, radius_km: float) -> 
         if not meta:
             continue
         candidate_radius = float(meta.get("radius_km", 0))
-        if float(dist) <= candidate_radius:
+        slack = pair_slack_km(acc_km, meta_accuracy_km(meta))
+        d = float(dist)
+        if d <= radius_km + slack and d <= candidate_radius + slack:
             return candidate_id
     return None
 
 
-async def pool_snapshot(user_id: str, lat: float, lon: float, radius_km: float) -> dict:
+SNAPSHOT_MAX_CANDIDATES = 200
+
+
+async def pool_snapshot(user_id: str, lat: float, lon: float, radius_km: float, acc_km: float = 0.0) -> dict:
     """Counts only, for the 'why haven't I been matched' message: how many other people are
-    searching right now, and how many of those are inside this person's radius. Never positions."""
+    searching right now, and how many of those are inside this person's radius (with the same
+    location slack the matching uses). Never positions."""
     total = max(0, await redis_client.zcard(WAITING_GEO_KEY) - 1)
     inside = await redis_client.geosearch(
-        WAITING_GEO_KEY, longitude=lon, latitude=lat, radius=radius_km, unit="km"
+        WAITING_GEO_KEY, longitude=lon, latitude=lat, radius=radius_km + TOLERANCE_CAP_KM,
+        unit="km", withdist=True,
     )
     recent = await redis_client.smembers(RECENT_PREFIX + user_id)
-    nearby = sum(1 for c in inside if c != user_id and c not in recent)
+    nearby = 0
+    for candidate_id, dist in inside[:SNAPSHOT_MAX_CANDIDATES]:
+        if candidate_id == user_id or candidate_id in recent:
+            continue
+        meta = await redis_client.hgetall(WAITING_META_PREFIX + candidate_id)
+        if not meta:
+            continue
+        if float(dist) <= radius_km + pair_slack_km(acc_km, meta_accuracy_km(meta)):
+            nearby += 1
     return {"total": total, "nearby": nearby}
 
 
@@ -430,6 +473,7 @@ async def ws_endpoint(websocket: WebSocket):
                 lat = float(msg["lat"])
                 lon = float(msg["lon"])
                 radius_km = clamp_radius(msg.get("radius_km"))
+                acc_km = clamp_accuracy_km(msg.get("accuracy_m"))
 
                 if not is_ignored(user_id):
                     await bump("searches")
@@ -438,11 +482,11 @@ async def ws_endpoint(websocket: WebSocket):
                 await redis_client.geoadd(WAITING_GEO_KEY, (lon, lat, user_id))
                 await redis_client.hset(
                     WAITING_META_PREFIX + user_id,
-                    mapping={"radius_km": radius_km, "joined_at": time.time()},
+                    mapping={"radius_km": radius_km, "acc_km": acc_km, "joined_at": time.time()},
                 )
 
                 for _ in range(20):
-                    peer_id = await find_match(user_id, lat, lon, radius_km)
+                    peer_id = await find_match(user_id, lat, lon, radius_km, acc_km)
                     if not peer_id:
                         break  # nobody suitable right now, stay in the pool
                     if await claim_pair(user_id, peer_id):
@@ -458,7 +502,7 @@ async def ws_endpoint(websocket: WebSocket):
 
                 if await redis_client.zscore(WAITING_GEO_KEY, user_id) is not None:
                     # still waiting: say how many others are searching, so the page can explain
-                    await send_to(user_id, {"type": "searching", **await pool_snapshot(user_id, lat, lon, radius_km)})
+                    await send_to(user_id, {"type": "searching", **await pool_snapshot(user_id, lat, lon, radius_km, acc_km)})
 
             elif mtype == "signal":
                 peer_id = await redis_client.get(ROOM_PREFIX + user_id)
@@ -495,7 +539,9 @@ async def ws_endpoint(websocket: WebSocket):
                 pos = await redis_client.geopos(WAITING_GEO_KEY, user_id)
                 if meta and pos and pos[0]:
                     lon, lat = pos[0]
-                    snapshot = await pool_snapshot(user_id, lat, lon, float(meta.get("radius_km", MIN_RADIUS_KM)))
+                    snapshot = await pool_snapshot(
+                        user_id, lat, lon, float(meta.get("radius_km", MIN_RADIUS_KM)), meta_accuracy_km(meta)
+                    )
                     await send_to(user_id, {"type": "searching", **snapshot})
 
             elif mtype == "ping":

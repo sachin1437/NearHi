@@ -83,6 +83,10 @@
   input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
   .age-note { margin: 16px 0 0; font-size: 14px; color: var(--muted); }
   .age-note a { color: inherit; text-underline-offset: 3px; }
+  .acc-notice p { margin: 0 0 12px; }
+  .acc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .acc-actions .btn-primary { font-size: 14px; padding: 9px 20px; }
+  .acc-actions .btn-ghost { font-size: 14px; padding: 9px 18px; }
   .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #F6D9A6; background: rgba(242,169,59,.10); border: 1px solid rgba(242,169,59,.40); border-radius: 12px; }
 
   .call { display: none; }
@@ -170,14 +174,14 @@
     <div class="radius-control">
       <label for="radiusSelect">Radius</label>
       <select id="radiusSelect">
-        <option value="10" selected>10 km</option>
+        <option value="10">10 km</option>
         <option value="25">25 km</option>
         <option value="50">50 km</option>
         <option value="100">100 km</option>
         <option value="250">250 km</option>
         <option value="500">500 km</option>
         <option value="1000">1000 km</option>
-        <option value="anywhere">Anywhere (no limit)</option>
+        <option value="anywhere" selected>Anywhere (no limit)</option>
         <option value="custom">Custom…</option>
       </select>
       <span class="custom-radius" id="customWrap" hidden>
@@ -189,6 +193,13 @@
     <button id="findBtn" class="btn btn-primary">Start talking</button>
     <p class="age-note">18+ only. By starting, you confirm you are an adult and agree to the <a href="/terms/">Terms</a> and <a href="/privacy/">Privacy Policy</a>.</p>
     <p id="startError" class="start-error" role="alert" hidden></p>
+    <div id="accNotice" class="start-error acc-notice" role="alert" hidden>
+      <p id="accText"></p>
+      <div class="acc-actions">
+        <button type="button" id="accWiden" class="btn btn-primary"></button>
+        <button type="button" id="accKeep" class="btn btn-ghost">Search anyway</button>
+      </div>
+    </div>
   </section>
 
   <section class="call">
@@ -238,6 +249,10 @@ const customWrap = document.getElementById('customWrap');
 const radiusCustom = document.getElementById('radiusCustom');
 const overlayText = document.getElementById('overlayText');
 const startError = document.getElementById('startError');
+const accNotice = document.getElementById('accNotice');
+const accText = document.getElementById('accText');
+const accWiden = document.getElementById('accWiden');
+const accKeep = document.getElementById('accKeep');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 
@@ -292,7 +307,7 @@ const PONG_WITHIN_MS = 10000;
 const WHERE_EVERY_MS = 8000;      // while waiting, ask how many others are searching
 
 // What the "Connection details" box shows, so a problem can be read off one screenshot.
-const PAGE_VERSION = 'diagnostics build, 5 Oct';
+const PAGE_VERSION = 'radius build, 11 Oct';
 const searchHint = document.getElementById('searchHint');
 const diagList = document.getElementById('diagList');
 const diag = { server: 'connecting', screening: '', accuracyM: null, radiusKm: null, searching: '', ice: 'no call yet', route: '-', relay: 'checking' };
@@ -700,8 +715,49 @@ function cameraErrorMessage(err) {
   return 'Camera or microphone is blocked. Click the icon at the left of the address bar, allow both, then reload the page.';
 }
 
+const WIDEN_STEPS_KM = [25, 50, 100, 250, 500, 1000];
+const GEO_PRECISE = { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 };
+const GEO_ORDINARY = { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 };
+
+// Ask for a precise position first (a phone then uses GPS). If that is slow or fails for any reason
+// other than the person saying no, fall back to the ordinary network-based position.
+function readPosition(onOk, onErr) {
+  navigator.geolocation.getCurrentPosition(onOk, (err) => {
+    if (err && err.code === 1) { onErr(err); return; }  // permission denied, no point trying again
+    navigator.geolocation.getCurrentPosition(onOk, onErr, GEO_ORDINARY);
+  }, GEO_PRECISE);
+}
+
+// Smallest preset that clears twice the location error (two devices, each possibly off), or null for Anywhere.
+function widenTarget(accuracyKm) {
+  const need = accuracyKm * 2;
+  for (const km of WIDEN_STEPS_KM) if (km >= need) return km;
+  return null;
+}
+
+function hideAccNotice() { accNotice.hidden = true; }
+
+// The location this device reports is rougher than the radius chosen: say so before searching.
+function askAboutAccuracy(pos, radiusKm, accKm) {
+  const target = widenTarget(accKm);
+  accText.textContent = 'Your device only knows your location to about ' + fmtDistance(accKm * 1000) +
+    ', which is rougher than your ' + radiusKm + ' km radius. You may miss people who are really close to you.';
+  accWiden.textContent = target ? 'Widen to ' + target + ' km' : 'Search anywhere';
+  accWiden.onclick = () => {
+    hideAccNotice();
+    customWrap.hidden = true;
+    radiusSelect.value = target ? String(target) : 'anywhere';
+    startSearch(pos, target || UNLIMITED_RADIUS_KM);
+  };
+  accKeep.onclick = () => { hideAccNotice(); startSearch(pos, radiusKm); };
+  accNotice.hidden = false;
+  statusEl.textContent = 'Your location is only roughly known.';
+  accWiden.focus();
+}
+
 findBtn.onclick = () => {
   startError.hidden = true;
+  hideAccNotice();
   if (window.isSecureContext === false) {
     showStartError(INSECURE_MESSAGE);
     return;
@@ -725,41 +781,56 @@ findBtn.onclick = () => {
   statusEl.textContent = 'Allow location access when your browser asks...';
   // Some browsers never show the permission prompt and never report an error. Without this the page just sits there.
   const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
-    try {
-      await ensureLocalStream();
-    } catch (e) {
-      clearTimeout(hintTimer);
-      statusEl.textContent = 'Could not start.';
-      showStartError(cameraErrorMessage(e));
-      return;
-    }
+  readPosition((pos) => {
     clearTimeout(hintTimer);
-    startError.hidden = true;
-    lastSearch = { lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm };
-    diag.accuracyM = pos.coords.accuracy;
-    diag.radiusKm = radiusKm;
-    diag.searching = 'asking the server...';
-    renderDiag();
-    if (!sendFind()) {
-      // the connection dropped while the browser was asking for permissions
-      stopEverything();
-      statusEl.textContent = 'Connection lost.';
-      showStartError('The connection dropped while starting. It is reconnecting, press Start talking again in a few seconds.');
+    const accKm = pos.coords.accuracy / 1000;   // NaN if the browser gives no accuracy, which skips the warning
+    if (radiusKm < UNLIMITED_RADIUS_KM && accKm > radiusKm) {
+      askAboutAccuracy(pos, radiusKm, accKm);
       return;
     }
-    const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
-    overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
-    statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
-    document.body.classList.add('active');
-    stopBtn.disabled = false;
+    startSearch(pos, radiusKm);
   }, (err) => {
     clearTimeout(hintTimer);
     statusEl.textContent = 'Could not start.';
     showStartError(locationErrorMessage(err));
-  }, { timeout: 15000, maximumAge: 60000 });
+  });
 };
+
+async function startSearch(pos, radiusKm) {
+  statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
+  const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
+  try {
+    await ensureLocalStream();
+  } catch (e) {
+    clearTimeout(hintTimer);
+    statusEl.textContent = 'Could not start.';
+    showStartError(cameraErrorMessage(e));
+    return;
+  }
+  clearTimeout(hintTimer);
+  startError.hidden = true;
+  const accuracyM = Number.isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null;
+  lastSearch = {
+    lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm,
+    ...(accuracyM === null ? {} : { accuracy_m: accuracyM }),
+  };
+  diag.accuracyM = pos.coords.accuracy;
+  diag.radiusKm = radiusKm;
+  diag.searching = 'asking the server...';
+  renderDiag();
+  if (!sendFind()) {
+    // the connection dropped while the browser was asking for permissions
+    stopEverything();
+    statusEl.textContent = 'Connection lost.';
+    showStartError('The connection dropped while starting. It is reconnecting, press Start talking again in a few seconds.');
+    return;
+  }
+  const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
+  overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
+  statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
+  document.body.classList.add('active');
+  stopBtn.disabled = false;
+}
 
 stopBtn.onclick = () => {
   send({ type: 'skip' });
