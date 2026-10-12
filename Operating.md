@@ -16,17 +16,21 @@ This is for whoever runs the site. If you just want to use NearHi, go to [nearhi
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `REDIS_URL` | No | `redis://localhost:6379` | On Railway, set this to `${{Redis.REDIS_URL}}` to reference the Redis add-on. |
-| `TURN_API_KEY` | No | unset | API key from a TURN provider (e.g. metered.ca). |
-| `TURN_DOMAIN` | No | unset | The subdomain your TURN provider gave you. |
+| `CF_TURN_KEY_ID` | No | unset | Cloudflare TURN key ID (Cloudflare dashboard, Realtime, TURN). Use this with `CF_TURN_API_TOKEN`. 1,000 GB a month is free. |
+| `CF_TURN_API_TOKEN` | No | unset | The API token that belongs to that TURN key. If both `CF_` values are set they win over the Metered ones. |
+| `TURN_USERNAME` | No | unset | Metered, simplest: the username of a credential (Metered dashboard, TURN Server, Credentials). Use with `TURN_PASSWORD`. Wins over `TURN_API_KEY`. Anyone can read these through `/ice-servers`, so make a credential just for this site. |
+| `TURN_PASSWORD` | No | unset | The password of that credential. |
+| `TURN_API_KEY` | No | unset | Metered instead of Cloudflare: API key from metered.ca. Note that Metered's free tier is only a small trial. |
+| `TURN_DOMAIN` | No | unset | Metered only: your app address, for example `yourapp.metered.live`. Just `yourapp` also works. |
 | `OPENAI_API_KEY` | No | unset | Turns on screening of chat messages and video stills (OpenAI's moderation endpoint, free). Without it, nothing is screened. |
 | `BAN_SALT` | **Set it in production** | a public dev-only default | Secret that scrambles IPs before they're stored. While it is the public default, anyone can reverse the stored hashes, so set your own random value. |
 | `ADMIN_TOKEN` | No | unset | Password for the admin routes and the `/admin/` page. Without it they return 404 and are disabled. Sent in an `Authorization` header, never in the URL. |
 | `STATS_UTC_OFFSET_MINUTES` | No | `330` (India) | Which time zone the daily reach numbers follow. `330` is IST, `0` is UTC. |
 | `MODERATION_URL` | No | OpenAI's endpoint | Only for testing: points screening at a stand-in server instead of OpenAI. |
 
-Without the two `TURN_*` variables set, `/ice-servers` just returns Google's public STUN server. That's enough for most home networks but will fail behind stricter NATs and some mobile carriers, so add a TURN provider before relying on this for real users.
+With no relay provider set, `/ice-servers` just returns Google's public STUN server. That's enough for most home networks but will fail behind stricter NATs and some mobile carriers, so add a TURN provider before relying on this for real users. Check `/status` for `relay_configured`, and open `/ice-servers` to see the real list: you should see several `turn:` entries, not only one `stun:`. If a provider is set but unreachable (wrong key, outage), the server logs a warning once a minute and falls back to STUN so calls still work where they can.
 
-Without `OPENAI_API_KEY` set, chat and video still work, they just aren't screened. This fails open deliberately: a broken moderation call should never be the reason a call stops working. Open `/status` on the live site to confirm what is switched on. It returns `text_screening`, `video_screening` and `ban_salt_set`, and the server also prints a warning at startup for anything unset.
+Without `OPENAI_API_KEY` set, chat and video still work, they just aren't screened. This fails open deliberately: a broken moderation call should never be the reason a call stops working. Open `/status` on the live site to confirm what is switched on. It returns `text_screening`, `video_screening`, `ban_salt_set` and `relay_configured`, and the server also prints a warning at startup for anything unset.
 
 Never commit secrets. `.env` is in `.gitignore`. Set them as variables on your host.
 
@@ -74,7 +78,7 @@ Open **Connection details** (the small arrow under the call box) on both devices
 | "No one else is searching" on both | The two devices are on different servers (for example one on `localhost`, one on the live site), or one isn't actually searching | Use the same address on both |
 | "1 other person is searching, but none inside your radius" | Their location, as your device reports it, is further away than your radius. Laptops estimate location from the network and are often 5 to 50 km off | Choose a bigger radius, or Anywhere. The page already allows for the accuracy your device reports (up to 30 km), so this mostly means the device reported a position that looked more accurate than it was |
 | "...their search radius is smaller than the distance between you" | The other side has a smaller radius, so they can't see you back | Widen the radius on the other device too |
-| "Matched, but no video link" | Matching worked, the video can't connect. Usually a phone on mobile data and a laptop on Wi-Fi with no relay server | Set up a TURN provider (`TURN_API_KEY`, `TURN_DOMAIN`). The details box says whether one is configured. Text chat still works meanwhile |
+| "Matched, but no video link" | Matching worked, the video can't connect. Usually a phone on mobile data and a laptop on Wi-Fi with no relay server | Set up a TURN provider (Cloudflare: `CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN`; or Metered: `TURN_API_KEY`, `TURN_DOMAIN`). The details box says whether one is configured. Text chat still works meanwhile |
 | "Connection lost. Reconnecting..." | The connection dropped (screen lock, network change, redeploy). It reconnects by itself | Wait a few seconds |
 
 For the live picture of the whole site, call `GET /admin/stats` with the admin token: it returns how many people are connected, how many are searching, and how many calls are in progress.

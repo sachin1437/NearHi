@@ -21,7 +21,33 @@ from pydantic import BaseModel
 # enough for P2P to work on most home/office networks but will fail behind
 # stricter NATs and some mobile carriers.
 TURN_API_KEY = os.environ.get("TURN_API_KEY")
-TURN_DOMAIN = os.environ.get("TURN_DOMAIN")  # e.g. "yoursubdomain.metered.live"
+TURN_DOMAIN = os.environ.get("TURN_DOMAIN")  # e.g. "yourapp.metered.live"
+
+# Simplest option for Metered's newer dashboard: use a credential's username and password directly
+# (Metered, TURN Server, Credentials). They are handed to every browser by /ice-servers, so make
+# a credential just for this and treat it as public. TURN_RELAY_HOST is Metered's shared relay host.
+TURN_USERNAME = os.environ.get("TURN_USERNAME")
+TURN_PASSWORD = os.environ.get("TURN_PASSWORD")
+TURN_RELAY_HOST = os.environ.get("TURN_RELAY_HOST", "global.relay.metered.ca")
+
+# Cloudflare Realtime TURN is the other supported provider (1,000 GB a month free).
+# Create a TURN key in the Cloudflare dashboard (Realtime, TURN) and set both values.
+# If these are set they win over the Metered settings above.
+CF_TURN_KEY_ID = os.environ.get("CF_TURN_KEY_ID")
+CF_TURN_API_TOKEN = os.environ.get("CF_TURN_API_TOKEN")
+CF_TURN_BASE = os.environ.get("CF_TURN_BASE", "https://rtc.live.cloudflare.com")  # only changed in tests
+CF_CREDENTIAL_TTL_S = 86400      # how long Cloudflare keeps each credential valid
+CF_CACHE_FOR_S = 3600            # we reuse one credential for this long instead of asking on every page load
+
+
+def turn_host(value) -> str:
+    """Accept whatever got pasted into TURN_DOMAIN: 'yourapp', 'yourapp.metered.live',
+    or a full 'https://yourapp.metered.live/'. A bare name gets Metered's domain added."""
+    host = (value or "").strip()
+    host = re.sub(r"^https?://", "", host, flags=re.I).split("/")[0].strip()
+    if host and "." not in host:
+        host += ".metered.live"
+    return host
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
@@ -599,22 +625,92 @@ async def ws_endpoint(websocket: WebSocket):
         last_frame_at.pop(user_id, None)
 
 
+STUN_ONLY = [{"urls": "stun:stun.l.google.com:19302"}]
+_cf_cache = {"until": 0.0, "servers": None}
+_turn_last_warning = 0.0
+
+
+def turn_configured() -> bool:
+    cloudflare = bool((CF_TURN_KEY_ID or "").strip() and (CF_TURN_API_TOKEN or "").strip())
+    metered = bool((TURN_API_KEY or "").strip() and turn_host(TURN_DOMAIN))
+    static = bool((TURN_USERNAME or "").strip() and (TURN_PASSWORD or "").strip())
+    return cloudflare or metered or static
+
+
+def static_ice_servers():
+    """ICE list built from a Metered username and password, no API call needed."""
+    host = re.sub(r"^https?://", "", (TURN_RELAY_HOST or "").strip(), flags=re.I).split("/")[0] or "global.relay.metered.ca"
+    user, password = TURN_USERNAME.strip(), TURN_PASSWORD.strip()
+    urls = [
+        f"turn:{host}:80",
+        f"turn:{host}:80?transport=tcp",
+        f"turn:{host}:443",
+        f"turns:{host}:443?transport=tcp",
+    ]
+    return [
+        {"urls": "stun:stun.relay.metered.ca:80"},
+        {"urls": urls, "username": user, "credential": password},
+    ]
+
+
+def warn_turn_failed(provider: str, error: Exception):
+    """Say in the server log when the relay provider could not be reached, at most once a minute,
+    and never with the keys or the URL. Silent fallback to STUN is what makes this hard to spot."""
+    global _turn_last_warning
+    now = time.monotonic()
+    if now - _turn_last_warning > 60:
+        _turn_last_warning = now
+        print(f"WARNING: could not get relay (TURN) servers from {provider} ({type(error).__name__}), "
+              "falling back to STUN only. Calls between some networks will not get video.")
+
+
+async def cloudflare_ice_servers():
+    now = time.monotonic()
+    if _cf_cache["servers"] and now < _cf_cache["until"]:
+        return _cf_cache["servers"]
+    async with httpx.AsyncClient(timeout=5) as client:
+        resp = await client.post(
+            f"{CF_TURN_BASE}/v1/turn/keys/{CF_TURN_KEY_ID.strip()}/credentials/generate-ice-servers",
+            headers={"Authorization": f"Bearer {CF_TURN_API_TOKEN.strip()}"},
+            json={"ttl": CF_CREDENTIAL_TTL_S},
+        )
+        resp.raise_for_status()
+        servers = resp.json()["iceServers"]
+    # port 53 URLs time out in browsers, so drop them
+    for entry in servers:
+        if isinstance(entry.get("urls"), list):
+            entry["urls"] = [u for u in entry["urls"] if ":53" not in u.split("?")[0]]
+    _cf_cache.update(until=now + CF_CACHE_FOR_S, servers=servers)
+    return servers
+
+
 @app.get("/ice-servers")
 async def ice_servers():
-    if not TURN_API_KEY or not TURN_DOMAIN:
-        return [{"urls": "stun:stun.l.google.com:19302"}]
+    if (CF_TURN_KEY_ID or "").strip() and (CF_TURN_API_TOKEN or "").strip():
+        try:
+            return await cloudflare_ice_servers()
+        except Exception as e:
+            warn_turn_failed("Cloudflare", e)
+            return STUN_ONLY
+    if (TURN_USERNAME or "").strip() and (TURN_PASSWORD or "").strip():
+        return static_ice_servers()
+    host = turn_host(TURN_DOMAIN)
+    api_key = (TURN_API_KEY or "").strip()
+    if not api_key or not host:
+        return STUN_ONLY
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             resp = await client.get(
-                f"https://{TURN_DOMAIN}/api/v1/turn/credentials",
-                params={"apiKey": TURN_API_KEY},
+                f"https://{host}/api/v1/turn/credentials",
+                params={"apiKey": api_key},
             )
             resp.raise_for_status()
             return resp.json()
-    except Exception:
+    except Exception as e:
         # if the TURN provider is unreachable, fail back to STUN-only
         # rather than breaking the whole app
-        return [{"urls": "stun:stun.l.google.com:19302"}]
+        warn_turn_failed("Metered", e)
+        return STUN_ONLY
 
 
 def require_admin(authorization: str = Header(default="")):
@@ -683,6 +779,7 @@ async def status():
         "text_screening": bool(OPENAI_API_KEY),
         "video_screening": bool(OPENAI_API_KEY),
         "ban_salt_set": BAN_SALT != "dev-only-change-me",
+        "relay_configured": turn_configured(),
     }
 
 
