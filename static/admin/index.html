@@ -4,24 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07173D">
 <title>NearHi admin</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
-  :root { --ink:#12211E; --panel:#1B322D; --line:#2E4A43; --paper:#F1F7F2; --muted:#9CC2B7; --ember:#F2A93B; --on-ember:#241505; --danger:#FF8E7A; }
+  :root { --navy:#07173D; --panel:#0E2358; --line:#24407F; --paper:#F3F7FF; --muted:#9DB4E0; --brand:#0466FD; --brand-dark:#0555D6; --on-brand:#FFFFFF; --sky:#7DB4FF; --ring:#3B87FF; --danger:#FF8E7A; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--ink); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, sans-serif; font-size:16px; line-height:1.5; }
+  body { margin:0; background:var(--navy); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, sans-serif; font-size:16px; line-height:1.5; }
   main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
   h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
   h2 { font-size: 20px; margin: 36px 0 12px; }
   p.muted, .muted { color: var(--muted); }
   .bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin: 8px 0 20px; }
   input[type=password] { flex:1; min-width:220px; max-width:420px; padding:10px 12px; background:var(--panel); color:var(--paper); border:1px solid var(--line); border-radius:10px; font:inherit; }
-  button { font:inherit; font-weight:600; cursor:pointer; border:0; border-radius:999px; padding:8px 18px; background:var(--ember); color:var(--on-ember); }
+  button { font:inherit; font-weight:600; cursor:pointer; border:0; border-radius:999px; padding:8px 18px; background:var(--brand); color:var(--on-brand); }
+  button:hover { background:var(--brand-dark); }
   button.ghost { background:transparent; color:var(--paper); border:1px solid var(--line); }
+  button.ghost:hover { background:rgba(255,255,255,.06); }
   button.danger { background:var(--danger); color:#2a0d07; }
+  button.danger:hover { background:#FF9F8E; }
   button:disabled { opacity:.5; cursor:default; }
-  :focus-visible { outline:3px solid #6FE1C4; outline-offset:2px; }
+  :focus-visible { outline:3px solid var(--ring); outline-offset:2px; }
   table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
   th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; font-size:14px; }
   th { color:var(--muted); font-weight:600; }
@@ -30,11 +34,11 @@
   .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .actions label { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
   .tag { display:inline-block; padding:1px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; margin-right:4px; }
-  .tag.auto { border-color:var(--ember); color:var(--ember); }
-  #msg { min-height: 24px; color: var(--ember); }
+  .tag.auto { border-color:var(--sky); color:var(--sky); }
+  #msg { min-height: 24px; color: var(--sky); }
   .hidden { display:none; }
   .live { font-size:18px; margin: 0 0 8px; }
-  .live strong { color: var(--ember); }
+  .live strong { color: var(--sky); }
   .wrapx { overflow-x:auto; }
   h3 { font-size: 16px; margin: 22px 0 8px; }
   .two { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -208,8 +212,8 @@ function renderLive(stats) {
   const live = $('live');
   live.replaceChildren(
     document.createTextNode('Online now '), el('strong', String(stats.connected)),
-    document.createTextNode('  \u00b7  Searching '), el('strong', String(stats.searching)),
-    document.createTextNode('  \u00b7  In calls '), el('strong', String(stats.in_calls)),
+    document.createTextNode('  ·  Searching '), el('strong', String(stats.searching)),
+    document.createTextNode('  ·  In calls '), el('strong', String(stats.in_calls)),
   );
 }
 

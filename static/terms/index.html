@@ -5,28 +5,29 @@
 <meta name="description" content="The rules for using NearHi.">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#12211E">
+<meta name="theme-color" content="#07173D">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
-  :root { --ink:#12211E; --panel:#1B322D; --line:#2E4A43; --paper:#F1F7F2; --muted:#9CC2B7; --ember:#F2A93B; }
+  :root { --navy:#07173D; --panel:#0E2358; --line:#24407F; --paper:#F3F7FF; --muted:#9DB4E0; --brand:#0466FD; --sky:#7DB4FF; --ring:#3B87FF; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--ink); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased; }
-  a { color: var(--ember); text-underline-offset: 3px; }
-  :focus-visible { outline:3px solid #6FE1C4; outline-offset:3px; border-radius:4px; }
+  body { margin:0; background:var(--navy); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; font-size:18px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a { color: var(--sky); text-underline-offset: 3px; }
+  :focus-visible { outline:3px solid var(--ring); outline-offset:3px; border-radius:4px; }
   header, main, footer { max-width: 72ch; margin: 0 auto; padding-inline: 22px; }
   header { padding-top: 26px; padding-bottom: 6px; }
   .brand { display:inline-flex; align-items:center; gap:10px; color:var(--paper); text-decoration:none; font-weight:700; font-size:24px; letter-spacing:-0.02em; }
-  .brand svg { width:32px; height:32px; }
+  .brand .badge { display:grid; place-items:center; flex:none; width:36px; height:36px; border-radius:10px; background:var(--brand); }
+  .brand .badge svg { width:64%; height:auto; fill:#fff; }
   h1 { font-size: clamp(34px, 6vw, 52px); line-height:1.05; letter-spacing:-0.03em; margin: 34px 0 6px; text-wrap: balance; }
   h2 { font-size: 24px; letter-spacing:-0.015em; margin: 40px 0 8px; }
   p, ul { margin: 0 0 14px; }
   ul { padding-left: 22px; }
   li { margin-bottom: 8px; }
   .meta { color: var(--muted); font-size: 15px; margin-bottom: 26px; }
-  .note { border-left: 3px solid var(--ember); background: var(--panel); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 22px 0; }
+  .note { border-left: 3px solid var(--sky); background: var(--panel); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 22px 0; }
   footer { padding-top: 40px; padding-bottom: 60px; color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); margin-top: 48px; }
   footer a { margin-right: 18px; }
   main { padding-bottom: 8px; }
@@ -34,7 +35,8 @@
 <script src="/hit.js" defer></script>
 </head>
 <body>
-<header><a class="brand" href="/" aria-label="NearHi home"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#F2A93B" stroke-opacity=".4" stroke-width="4"/><circle cx="32" cy="32" r="16" fill="none" stroke="#F2A93B" stroke-opacity=".75" stroke-width="4.5"/><circle cx="32" cy="32" r="8" fill="#F2A93B"/></svg>NearHi</a></header>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="nh-mark" viewBox="0 0 645 554"><path fill-rule="evenodd" d="M564.0 198.4 L560.0 197.1 L556.0 194.4 L553.6 192.0 L532.0 165.3 L517.8 145.0 L505.3 124.0 L494.8 103.0 L490.8 91.0 L489.6 85.0 L489.4 81.0 L488.5 77.0 L488.5 70.0 L489.4 66.0 L489.6 62.0 L491.8 53.0 L493.8 47.0 L496.7 41.0 L504.6 29.0 L516.0 17.6 L526.0 10.8 L536.0 5.8 L545.0 2.8 L555.0 0.6 L569.0 -0.5 L585.0 1.8 L600.0 6.7 L613.3 14.0 L618.0 17.6 L628.5 28.0 L635.2 37.0 L640.2 47.0 L644.4 61.0 L644.6 66.0 L645.5 70.0 L645.5 78.0 L644.6 82.0 L644.4 86.0 L641.2 98.0 L635.3 112.0 L624.2 132.0 L612.2 150.0 L603.0 162.3 L586.4 182.0 L573.0 195.4 L568.0 198.2ZM571.0 106.4 L579.0 104.1 L584.0 101.2 L590.2 95.0 L593.3 90.0 L595.4 84.0 L595.4 72.0 L594.2 68.0 L591.2 62.0 L584.0 54.8 L579.0 51.8 L572.0 49.8 L563.0 49.6 L558.0 50.8 L550.0 54.8 L543.6 61.0 L539.8 68.0 L538.6 72.0 L537.7 78.0 L538.8 85.0 L541.7 92.0 L543.6 95.0 L549.0 100.4 L553.0 103.1 L558.0 105.2 L563.0 106.4ZM16.0 534.5 L10.8 528.0 L5.9 520.0 L2.8 513.0 L-0.5 498.0 L-0.5 147.0 L1.8 136.0 L4.8 127.0 L7.8 121.0 L16.6 108.0 L26.5 98.0 L35.0 91.8 L44.0 86.8 L54.0 82.8 L68.0 79.6 L73.0 79.4 L77.0 78.5 L88.0 78.6 L91.0 79.4 L96.0 79.6 L110.0 82.8 L120.0 86.7 L133.0 93.8 L139.0 98.6 L147.0 106.5 L153.2 115.0 L158.1 124.0 L160.2 129.0 L162.2 136.0 L162.7 140.0 L164.0 140.8 L167.5 138.0 L171.0 133.5 L184.5 120.0 L202.7 105.0 L218.0 94.8 L225.0 90.8 L244.0 81.8 L271.0 72.8 L298.0 67.6 L306.0 67.4 L310.0 66.5 L342.0 66.5 L346.0 67.4 L354.0 67.6 L357.0 68.4 L361.0 68.6 L377.0 71.6 L393.0 75.8 L407.0 80.8 L426.0 89.8 L437.0 96.8 L446.0 103.6 L459.0 116.5 L469.0 130.5 L474.2 141.0 L479.2 155.0 L481.4 165.0 L481.6 171.0 L482.5 175.0 L482.5 185.0 L481.6 189.0 L481.4 195.0 L478.2 209.0 L476.2 215.0 L469.2 230.0 L463.0 239.3 L457.4 246.0 L453.0 250.4 L442.6 259.0 L439.8 263.0 L436.8 269.0 L436.4 276.0 L435.5 280.0 L435.4 298.0 L434.6 301.0 L434.4 309.0 L433.0 311.4 L431.0 312.4 L428.0 312.4 L424.0 310.4 L421.0 306.5 L410.6 296.0 L408.0 292.5 L388.0 272.8 L381.0 269.8 L375.0 268.6 L370.0 268.4 L359.0 266.2 L340.0 260.2 L331.0 256.3 L324.0 252.2 L304.0 237.8 L293.4 232.0 L280.0 226.8 L272.0 224.6 L260.0 222.6 L233.0 222.6 L221.0 224.8 L211.0 227.8 L194.0 235.8 L186.0 241.6 L174.6 253.0 L168.8 261.0 L161.8 276.0 L158.8 287.0 L157.6 294.0 L157.5 498.0 L154.2 512.0 L149.2 523.0 L144.4 530.0 L136.0 538.4 L124.0 546.1 L114.0 550.2 L95.0 554.4 L63.0 554.5 L46.0 551.2 L40.0 549.2 L31.0 545.2 L22.7 540.0ZM375.0 549.2 L364.0 544.2 L357.7 540.0 L349.6 533.0 L342.8 524.0 L339.3 517.0 L335.8 507.0 L334.6 501.0 L333.5 492.0 L333.7 293.0 L335.0 292.0 L343.0 293.8 L355.0 297.8 L367.0 303.3 L386.0 314.8 L396.3 322.0 L409.0 332.4 L417.0 338.2 L423.0 341.2 L427.0 342.4 L436.0 342.4 L441.0 341.2 L445.0 339.2 L449.5 336.0 L453.2 331.0 L456.2 325.0 L459.8 307.0 L464.8 289.0 L468.9 280.0 L475.8 269.0 L481.0 262.5 L486.0 258.2 L487.3 259.0 L490.4 271.0 L492.4 283.0 L492.6 287.0 L493.4 290.0 L493.6 297.0 L494.5 301.0 L494.6 315.0 L495.5 319.0 L495.5 492.0 L494.6 496.0 L494.4 501.0 L491.2 514.0 L484.2 527.0 L476.0 536.4 L468.0 542.2 L461.0 546.2 L451.0 550.2 L431.0 554.4 L399.0 554.5 L395.0 553.6 L391.0 553.4Z"/></symbol></svg>
+<header><a class="brand" href="/" aria-label="NearHi home"><span class="badge" aria-hidden="true"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>NearHi</a></header>
 <main>
 <h1>Terms of Use</h1>
 <p class="meta">Last updated: October 2026</p>
