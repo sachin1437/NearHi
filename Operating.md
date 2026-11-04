@@ -38,7 +38,8 @@ Never commit secrets. `.env` is in `.gitignore`. On the live server they are kep
 
 The live site (https://nearhi.in) runs on one Linux server behind Cloudflare.
 
-- **Cloudflare** handles HTTPS and filters junk traffic in front of the server, and its free TURN key provides the relay for video calls that cannot connect directly.
+- **Cloudflare** handles HTTPS and filters junk traffic in front of the server.
+- **Metered** provides the relay (TURN) for video calls that cannot connect directly, set with `TURN_USERNAME` and `TURN_PASSWORD`. Its free plan includes 50 GB a month. Check usage in the Metered dashboard, and switch to Cloudflare Realtime TURN (`CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN`) if you outgrow it.
 - **Nginx** on the server proxies to the app, including WebSocket upgrades, applies rate limits, and reads the real visitor IP from Cloudflare. The app trusts the `X-Forwarded-For` header Nginx sets, so it must only be reachable through Nginx, never directly.
 - **The app** runs as a systemd service (uvicorn, one worker only, see Known limitations) and restarts by itself if it crashes.
 - **Redis** runs on the same machine and listens on localhost only.
