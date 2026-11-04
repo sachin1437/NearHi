@@ -4,13 +4,13 @@
 
 **Talk to someone near you, right now.** Open the site, press start, and you're on a video call with a stranger who is within the distance you chose. No sign-up, no app, nothing to install.
 
-### 👉 [nearhi.cybernetic.co.in](https://nearhi.cybernetic.co.in)
+### 👉 [nearhi.in](https://nearhi.in)
 
 Runs in the browser on your phone or laptop (Chrome, Safari, Edge, Firefox). 18+ only.
 
 ## How to use it
 
-1. Open [nearhi.cybernetic.co.in](https://nearhi.cybernetic.co.in) and press **Start talking**.
+1. Open [nearhi.in](https://nearhi.in) and press **Start talking**.
 2. Pick how far away you're happy to meet someone, from 10 km to anywhere, and allow your location and camera when the browser asks.
 3. You're connected with the next person searching within range. Chat by text or video. **Skip** moves you to someone new, **Stop** ends it and turns your camera off.
 
@@ -30,7 +30,7 @@ Phones and laptops often guess their location a few kilometres off. NearHi allow
 - **Your location** is used only to find people in range, and is removed once you're matched, skip, or leave. The other person is never told it.
 - **The other person can see your IP address during a video call**, which can roughly reveal your city. That is how direct video calls work. Use a VPN if that bothers you.
 
-Read the full [Terms of Use](https://nearhi.cybernetic.co.in/terms/) and [Privacy Policy](https://nearhi.cybernetic.co.in/privacy/).
+Read the full [Terms of Use](https://nearhi.in/terms/) and [Privacy Policy](https://nearhi.in/privacy/).
 
 ## Contact
 
@@ -54,6 +54,7 @@ This repository is the code behind the live site. You don't need it to use NearH
 - **Video:** WebRTC peer to peer, STUN by default, TURN pluggable through `/ice-servers`.
 - **Frontend:** a landing page at `/` and the chat app at `/talk/`. Plain HTML, CSS and JavaScript, no framework, no build step. The font (Bricolage Grotesque, Open Font License) is self-hosted.
 - **Moderation:** OpenAI's moderation endpoint for chat text and sampled video stills, manual bans through a token-protected admin page.
+- **Hosting:** a single Linux server behind Cloudflare. Details are in [Operating.md](Operating.md).
 
 **Run it locally**
 
@@ -62,7 +63,7 @@ This repository is the code behind the live site. You don't need it to use NearH
 3. `python -m uvicorn main:app --host 0.0.0.0 --port 8000`
 4. Open `http://localhost:8000` in two browser tabs, allow location and camera in both.
 
-**Everything else** (environment variables, deployment, moderation and bans, the reach numbers, troubleshooting when two people don't connect, known limitations) is in [docs/OPERATING.md](docs/OPERATING.md).
+**Everything else** (environment variables, deployment, moderation and bans, the reach numbers, troubleshooting when two people don't connect, known limitations) is in [Operating.md](Operating.md).
 
 **Project structure**
 
@@ -70,11 +71,10 @@ This repository is the code behind the live site. You don't need it to use NearH
 NearHi/
 ├── main.py              backend: matching, chat + video screening, signaling relay, bans, admin API
 ├── requirements.txt
-├── Procfile             tells Railway/Render how to start the app
-├── test_matching.py     checks against a running local server
+├── Procfile             start command for hosts that read one (Heroku style); the live server uses systemd instead
+├── Operating.md         running and operating the site
 ├── docs/
-│   ├── banner.svg
-│   └── OPERATING.md     running and operating the site
+│   └── banner.svg
 └── static/
     ├── index.html       landing page, served at /
     ├── talk/            the chat app, served at /talk/
@@ -83,7 +83,7 @@ NearHi/
     ├── terms/           Terms of Use
     ├── privacy/         Privacy Policy
     ├── fonts/           self-hosted font, its stylesheet and licence
-    ├── topo.svg, topo-tile-dark.webp, topo-tile-light.webp    background artwork
+    ├── topo.svg, topo-tile-dark.webp, topo-tile-light.webp, topo-tile-brand.webp    background artwork
     ├── og-image.png     preview image shown when the link is shared
-    └── favicon.svg, favicon.ico, apple-touch-icon.png         site icons
+    └── logo-mark.svg, favicon.svg, favicon.ico, apple-touch-icon.png    logo and site icons
 ```

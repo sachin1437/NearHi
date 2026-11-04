@@ -1,6 +1,6 @@
 # Running and operating NearHi
 
-This is for whoever runs the site. If you just want to use NearHi, go to [nearhi.cybernetic.co.in](https://nearhi.cybernetic.co.in).
+This is for whoever runs the site. If you just want to use NearHi, go to [nearhi.in](https://nearhi.in).
 
 ## 🎯 How matching works
 
@@ -15,7 +15,7 @@ This is for whoever runs the site. If you just want to use NearHi, go to [nearhi
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `REDIS_URL` | No | `redis://localhost:6379` | On Railway, set this to `${{Redis.REDIS_URL}}` to reference the Redis add-on. |
+| `REDIS_URL` | No | `redis://localhost:6379` | The live server runs Redis on the same machine, so it is `redis://127.0.0.1:6379`. |
 | `CF_TURN_KEY_ID` | No | unset | Cloudflare TURN key ID (Cloudflare dashboard, Realtime, TURN). Use this with `CF_TURN_API_TOKEN`. 1,000 GB a month is free. |
 | `CF_TURN_API_TOKEN` | No | unset | The API token that belongs to that TURN key. If both `CF_` values are set they win over the Metered ones. |
 | `TURN_USERNAME` | No | unset | Metered, simplest: the username of a credential (Metered dashboard, TURN Server, Credentials). Use with `TURN_PASSWORD`. Wins over `TURN_API_KEY`. Anyone can read these through `/ice-servers`, so make a credential just for this site. |
@@ -32,11 +32,32 @@ With no relay provider set, `/ice-servers` just returns Google's public STUN ser
 
 Without `OPENAI_API_KEY` set, chat and video still work, they just aren't screened. This fails open deliberately: a broken moderation call should never be the reason a call stops working. Open `/status` on the live site to confirm what is switched on. It returns `text_screening`, `video_screening`, `ban_salt_set` and `relay_configured`, and the server also prints a warning at startup for anything unset.
 
-Never commit secrets. `.env` is in `.gitignore`. Set them as variables on your host.
+Never commit secrets. `.env` is in `.gitignore`. On the live server they are kept in `/etc/nearhi.env`, readable only by root and the app user.
 
 ## 🚀 Deployment
 
-Push to GitHub, then on Railway: New Project, deploy from the repo, add a Redis plugin, set `REDIS_URL` to `${{Redis.REDIS_URL}}` in the web service's variables, generate a domain. A variable change only takes effect after the service redeploys.
+The live site (https://nearhi.in) runs on one Linux server behind Cloudflare.
+
+- **Cloudflare** handles HTTPS and filters junk traffic in front of the server, and its free TURN key provides the relay for video calls that cannot connect directly.
+- **Nginx** on the server proxies to the app, including WebSocket upgrades, applies rate limits, and reads the real visitor IP from Cloudflare. The app trusts the `X-Forwarded-For` header Nginx sets, so it must only be reachable through Nginx, never directly.
+- **The app** runs as a systemd service (uvicorn, one worker only, see Known limitations) and restarts by itself if it crashes.
+- **Redis** runs on the same machine and listens on localhost only.
+- **Secrets** live in an environment file on the server, never in this repository.
+
+**Updating the site.** Push to GitHub, then on the server run `sudo nearhi-update`. It pulls the latest code, installs requirements and restarts the service.
+
+**Day to day**
+
+| Task | Command |
+|---|---|
+| Watch the logs | `sudo journalctl -u nearhi -f` |
+| Restart the app | `sudo systemctl restart nearhi` |
+| Change a setting | `sudo nano /etc/nearhi.env`, then restart the app. A change only takes effect after a restart |
+| Check what is switched on | `curl -s http://127.0.0.1:8000/status` |
+
+**Backups.** Redis holds the ban list and pending reports. Take a snapshot of the server's disk now and then. Everything else can be rebuilt.
+
+**Other hosts.** The `Procfile` is for platforms that read one (Railway, Render, Heroku). On those you need a Redis add-on with `REDIS_URL` set, WebSocket support and a single process.
 
 ## 🛡️ Moderation and bans
 
@@ -63,7 +84,7 @@ Sign in at `/admin/`. The **Reach** table shows the last 14 days, newest first:
 | Video worked / No video | Matched calls where the video link came up within 15 seconds / did not. This is the number that shows whether people are really getting video |
 | Peak online | The most connections open at once that day, which is what decides whether anyone finds a match |
 
-Under the table, **Tagged links** and **Other websites** show where visitors came from. To compare channels, add `?ref=` and any short name to the link you share, for example `https://nearhi.cybernetic.co.in/?ref=lpu-hostel` in one group and `?ref=batch-2027` in another. Each name is counted separately. Links shared in WhatsApp and Instagram usually carry no referring site, so tags are the only way to tell them apart.
+Under the table, **Tagged links** and **Other websites** show where visitors came from. To compare channels, add `?ref=` and any short name to the link you share, for example `https://nearhi.in/?ref=lpu-hostel` in one group and `?ref=batch-2027` in another. Each name is counted separately. Links shared in WhatsApp and Instagram usually carry no referring site, so tags are the only way to tell them apart.
 
 How it works, and what it does not do: each public page sends one small note to `/hit`, and the server counts the browser's random ID through a Redis HyperLogLog, which keeps a count and cannot be read back, mixed with a secret that changes daily. No cookies, no third-party scripts, no stored IPs or IDs, and bots that run JavaScript are filtered out. Counts are kept for 180 days. Search engines and link previews never run the script, so they are not in the numbers.
 
