@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import math
 import os
 import re
 import secrets
@@ -125,6 +126,41 @@ return 0
 connections: dict[str, WebSocket] = {}
 identities: dict[str, dict] = {}  # user_id -> {"client_id": ..., "ip_hash": ...}
 last_frame_at: dict[str, float] = {}  # user_id -> monotonic time of the last accepted frame
+
+# Per-connection message limits. Nginx limits HTTP requests, not WebSocket messages, so without
+# this one connection could send chat/find/report messages in a loop. Each chat message costs a
+# moderation call and each find costs a Redis search. Normal use stays far below these numbers.
+MAX_MESSAGE_CHARS = 300_000   # one frame is capped at 200k chars, so anything bigger is not a real message
+MAX_STRIKES = 100             # messages dropped for going over a limit before the connection is closed
+REPORT_REASON_MAX_CHARS = 300
+
+
+class TokenBucket:
+    """Allows short bursts but a steady rate no higher than refill_per_s."""
+
+    def __init__(self, capacity: float, refill_per_s: float):
+        self.capacity = capacity
+        self.refill_per_s = refill_per_s
+        self.tokens = capacity
+        self.updated = time.monotonic()
+
+    def allow(self) -> bool:
+        now = time.monotonic()
+        self.tokens = min(self.capacity, self.tokens + (now - self.updated) * self.refill_per_s)
+        self.updated = now
+        if self.tokens >= 1:
+            self.tokens -= 1
+            return True
+        return False
+
+
+def new_limiters() -> dict[str, TokenBucket]:
+    return {
+        "all": TokenBucket(80, 20),         # every message; signaling sends a burst of ICE candidates at call start
+        "find": TokenBucket(10, 1),          # starting a search; generous so rapid Skip clicks still work
+        "chat": TokenBucket(8, 1.5),        # chat messages, and so moderation calls
+        "report": TokenBucket(3, 1 / 20),   # reports
+    }
 background_tasks: set = set()         # keeps frame-check tasks alive until they finish
 
 
@@ -477,11 +513,31 @@ async def ws_endpoint(websocket: WebSocket):
         "supports_ping": True,   # lets the page check the connection is really alive
     }))
 
+    limiters = new_limiters()
+    strikes = 0
+
     try:
         while True:
             raw = await websocket.receive_text()
-            msg = json.loads(raw)
+            if len(raw) > MAX_MESSAGE_CHARS:
+                await websocket.close(code=1009)  # message too big
+                return
+            try:
+                msg = json.loads(raw)
+            except ValueError:
+                continue  # not JSON, ignore it instead of dropping the connection
+            if not isinstance(msg, dict):
+                continue
             mtype = msg.get("type")
+
+            # Drop messages that arrive faster than any real page sends them. A client that
+            # keeps doing it gets disconnected.
+            if not limiters["all"].allow() or (mtype in limiters and not limiters[mtype].allow()):
+                strikes += 1
+                if strikes >= MAX_STRIKES:
+                    await websocket.close(code=1008)  # policy violation
+                    return
+                continue
 
             if mtype == "find":
                 # identity is attached to the 'find' message (the first real action a
@@ -496,8 +552,13 @@ async def ws_endpoint(websocket: WebSocket):
                     await websocket.close()
                     return
 
-                lat = float(msg["lat"])
-                lon = float(msg["lon"])
+                try:
+                    lat = float(msg["lat"])
+                    lon = float(msg["lon"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
+                    continue  # Redis rejects out-of-range coordinates, so don't pass them on
                 radius_km = clamp_radius(msg.get("radius_km"))
                 acc_km = clamp_accuracy_km(msg.get("accuracy_m"))
 
@@ -603,7 +664,7 @@ async def ws_endpoint(websocket: WebSocket):
                     await record_report(
                         reported=identities.get(peer_id, {}),
                         reporter=identities.get(user_id, {}),
-                        reason=msg.get("reason", ""),
+                        reason=str(msg.get("reason") or "")[:REPORT_REASON_MAX_CHARS],
                     )
 
             elif mtype == "skip":
