@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07173D">
+<title>NearHi admin</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root { --navy:#07173D; --panel:#0E2358; --line:#24407F; --paper:#F3F7FF; --muted:#9DB4E0; --brand:#0466FD; --brand-dark:#0555D6; --on-brand:#FFFFFF; --sky:#7DB4FF; --ring:#3B87FF; --danger:#FF8E7A; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--navy); color:var(--paper); font-family:"Bricolage Grotesque", system-ui, sans-serif; font-size:16px; line-height:1.5; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 20px; margin: 36px 0 12px; }
+  p.muted, .muted { color: var(--muted); }
+  .bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin: 8px 0 20px; }
+  input[type=password] { flex:1; min-width:220px; max-width:420px; padding:10px 12px; background:var(--panel); color:var(--paper); border:1px solid var(--line); border-radius:10px; font:inherit; }
+  button { font:inherit; font-weight:600; cursor:pointer; border:0; border-radius:999px; padding:8px 18px; background:var(--brand); color:var(--on-brand); }
+  button:hover { background:var(--brand-dark); }
+  button.ghost { background:transparent; color:var(--paper); border:1px solid var(--line); }
+  button.ghost:hover { background:rgba(255,255,255,.06); }
+  button.danger { background:var(--danger); color:#2a0d07; }
+  button.danger:hover { background:#FF9F8E; }
+  button:disabled { opacity:.5; cursor:default; }
+  :focus-visible { outline:3px solid var(--ring); outline-offset:2px; }
+  table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; font-size:14px; }
+  th { color:var(--muted); font-weight:600; }
+  tr:last-child td { border-bottom:0; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .actions label { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; margin-right:4px; }
+  .tag.auto { border-color:var(--sky); color:var(--sky); }
+  #msg { min-height: 24px; color: var(--sky); }
+  .hidden { display:none; }
+  .live { font-size:18px; margin: 0 0 8px; }
+  .live strong { color: var(--sky); }
+  .wrapx { overflow-x:auto; }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  .two { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 600; background: rgba(255,255,255,.04); }
+</style>
+</head>
+<body>
+<main>
+  <h1>NearHi admin</h1>
+  <p class="muted">Reports from people and from the automatic screening. Nothing here stores video or images.</p>
+
+  <section id="login">
+    <div class="bar">
+      <input type="password" id="token" placeholder="Admin token" autocomplete="off" aria-label="Admin token">
+      <button id="signin">Sign in</button>
+    </div>
+  </section>
+  <p id="msg" role="status"></p>
+
+  <section id="panel" class="hidden">
+    <div class="bar">
+      <button class="ghost" id="refresh">Refresh</button>
+      <button class="ghost" id="signout">Sign out</button>
+      <span class="muted" id="updated"></span>
+    </div>
+    <p id="live" class="live" aria-live="polite"></p>
+
+    <h2>Reach</h2>
+    <p class="muted" id="reachNote"></p>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Reach by day"><table id="reach"><thead><tr>
+      <th>Day</th><th class="num">Visitors</th><th class="num">Page views</th><th class="num">Searchers</th>
+      <th class="num">Searches</th><th class="num">Matches</th><th class="num">Video worked</th><th class="num">No video</th><th class="num">Peak online</th>
+    </tr></thead><tbody></tbody></table></div>
+    <div class="two">
+      <div><h3>Tagged links</h3><div class="wrapx" tabindex="0" role="region" aria-label="Tagged links"><table id="refs"><thead><tr><th>Tag</th><th class="num">Visits</th></tr></thead><tbody></tbody></table></div></div>
+      <div><h3>Other websites</h3><div class="wrapx" tabindex="0" role="region" aria-label="Other websites"><table id="hosts"><thead><tr><th>Site</th><th class="num">Visits</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+    <div class="bar" style="margin-top:18px">
+      <button class="ghost" id="ignoreBtn"></button>
+      <span class="muted" id="ignoreState"></span>
+    </div>
+
+    <h2>Reported browsers</h2>
+    <p class="muted">Banning blocks that browser right away, and disconnects it if it is connected now. Blocking the network too can also affect other people on the same connection, so it is off unless you tick it.</p>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Reported browsers"><table id="reports"><thead><tr>
+      <th>Browser ID</th><th>Reports</th><th>Flags</th><th>Latest</th><th>Action</th>
+    </tr></thead><tbody></tbody></table></div>
+
+    <h2>Banned</h2>
+    <div class="wrapx" tabindex="0" role="region" aria-label="Banned"><table id="bans"><thead><tr><th>Type</th><th>Value</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY = 'nearhi_admin_token';
+let token = sessionStorage.getItem(KEY) || '';
+
+function say(text) { $('msg').textContent = text || ''; }
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  if (res.status === 404) throw new Error('Wrong token, or the admin routes are not enabled on this server.');
+  if (!res.ok) throw new Error('Request failed (' + res.status + ').');
+  return res.json();
+}
+
+function el(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;   // textContent only, never innerHTML: reasons are user-supplied
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, className, onClick) {
+  const b = el('button', label, className);
+  b.onclick = onClick;
+  return b;
+}
+
+function when(ts) { return new Date(ts * 1000).toLocaleString(); }
+
+function groupByClient(reports) {
+  const groups = new Map();
+  for (const r of reports) {                       // reports arrive newest first
+    const id = r.reported_client_id;
+    if (!id) continue;
+    if (!groups.has(id)) groups.set(id, { id, items: [], latestIp: r.reported_ip_hash || '' });
+    groups.get(id).items.push(r);
+  }
+  return [...groups.values()];
+}
+
+async function act(path, body, done) {
+  try {
+    say('Working…');
+    await api(path, { method: 'POST', body: JSON.stringify(body) });
+    say(done);
+    await load();
+  } catch (e) { say(e.message); }
+}
+
+function renderReports(data) {
+  const body = $('reports').querySelector('tbody');
+  body.replaceChildren();
+  const groups = groupByClient(data.reports);
+  if (!groups.length) {
+    const tr = el('tr'); const td = el('td', 'Nothing to review.', 'muted'); td.colSpan = 5; tr.append(td); body.append(tr);
+    return;
+  }
+  groups.sort((a, b) => b.items.length - a.items.length);
+  for (const g of groups) {
+    const tr = el('tr');
+    const idCell = el('td'); const code = el('code', g.id.slice(0, 12) + (g.id.length > 12 ? '…' : '')); code.title = g.id; idCell.append(code);
+
+    const people = g.items.filter(r => r.source !== 'video-screen').length;
+    const auto = g.items.length - people;
+    const reportsCell = el('td');
+    reportsCell.append(el('span', people + ' from people', 'tag'));
+    if (auto) reportsCell.append(el('span', auto + ' automatic', 'tag auto'));
+    const reporters = new Set(g.items.map(r => r.reporter_client_id).filter(Boolean)).size;
+    reportsCell.append(el('div', reporters + ' different reporter' + (reporters === 1 ? '' : 's'), 'muted'));
+
+    const flagsCell = el('td', String(data.flag_counts_by_client_id[g.id] || 0));
+    const latest = g.items[0];
+    const latestCell = el('td'); latestCell.append(el('div', when(latest.ts)), el('div', latest.reason || '(no reason)', 'muted'));
+
+    const actionCell = el('td'); const wrap = el('div', undefined, 'actions');
+    const net = document.createElement('input'); net.type = 'checkbox'; net.id = 'net-' + g.id;
+    const netLabel = el('label'); netLabel.htmlFor = net.id; netLabel.append(net, document.createTextNode('also block network'));
+    wrap.append(
+      button('Ban', 'danger', () => {
+        if (!confirm('Ban this browser' + (net.checked ? ' and its network' : '') + '?')) return;
+        act('/admin/ban', { client_id: g.id, ip_hash: net.checked ? g.latestIp : '' }, 'Banned.');
+      }),
+      button('Dismiss', 'ghost', () => act('/admin/dismiss', { client_id: g.id }, 'Dismissed.')),
+      netLabel,
+    );
+    actionCell.append(wrap);
+    tr.append(idCell, reportsCell, flagsCell, latestCell, actionCell);
+    body.append(tr);
+  }
+}
+
+function renderBans(data) {
+  const body = $('bans').querySelector('tbody');
+  body.replaceChildren();
+  const rows = [
+    ...data.client_ids.map(v => ({ type: 'Browser', value: v, payload: { client_id: v } })),
+    ...data.ip_hashes.map(v => ({ type: 'Network', value: v, payload: { ip_hash: v } })),
+  ];
+  if (!rows.length) {
+    const tr = el('tr'); const td = el('td', 'Nobody is banned.', 'muted'); td.colSpan = 3; tr.append(td); body.append(tr);
+    return;
+  }
+  for (const r of rows) {
+    const tr = el('tr');
+    const valueCell = el('td'); const code = el('code', r.value.slice(0, 16) + (r.value.length > 16 ? '…' : '')); code.title = r.value; valueCell.append(code);
+    const actionCell = el('td'); actionCell.append(button('Unban', 'ghost', () => act('/admin/unban', r.payload, 'Unbanned.')));
+    tr.append(el('td', r.type), valueCell, actionCell);
+    body.append(tr);
+  }
+}
+
+function renderLive(stats) {
+  const live = $('live');
+  live.replaceChildren(
+    document.createTextNode('Online now '), el('strong', String(stats.connected)),
+    document.createTextNode('  ·  Searching '), el('strong', String(stats.searching)),
+    document.createTextNode('  ·  In calls '), el('strong', String(stats.in_calls)),
+  );
+}
+
+function utcLabel(minutes) {
+  const sign = minutes < 0 ? '-' : '+';
+  const abs = Math.abs(minutes);
+  return 'UTC' + sign + Math.floor(abs / 60) + (abs % 60 ? ':' + String(abs % 60).padStart(2, '0') : '');
+}
+
+function renderReach(data) {
+  $('reachNote').textContent =
+    'Visitors are people counted once per day, so someone who returns tomorrow counts again. Days follow ' +
+    utcLabel(data.utc_offset_minutes) + '. Video worked / No video counts calls where the video link did or did not come up within 15 seconds. ' +
+    'Add ?ref=any-name to a link you share (for example /?ref=lpu-hostel) to see how many people each group brings.';
+
+  const body = $('reach').querySelector('tbody');
+  body.replaceChildren();
+  const sum = (f) => data.days.reduce((n, d) => n + d[f], 0);
+  const cells = (d, label) => [label, d.visitors, d.views, d.searchers, d.searches, d.matches, d.link_up, d.link_failed, d.peak_online];
+  const addRow = (values, className) => {
+    const tr = el('tr', undefined, className);
+    values.forEach((v, i) => tr.append(el('td', String(v), i ? 'num' : undefined)));
+    body.append(tr);
+  };
+  data.days.forEach((d, i) => addRow(cells(d, i === 0 ? 'Today' : d.day)));
+  addRow([
+    data.days.length + '-day total', sum('visitors'), sum('views'), sum('searchers'), sum('searches'),
+    sum('matches'), sum('link_up'), sum('link_failed'), Math.max(...data.days.map(d => d.peak_online)),
+  ], 'total');
+
+  for (const [id, rows, empty] of [['refs', data.sources.ref, 'No tagged links used yet.'], ['hosts', data.sources.host, 'No visits from other websites yet.']]) {
+    const tb = $(id).querySelector('tbody');
+    tb.replaceChildren();
+    if (!rows.length) { const tr = el('tr'); const td = el('td', empty, 'muted'); td.colSpan = 2; tr.append(td); tb.append(tr); continue; }
+    for (const [name, count] of rows) {
+      const tr = el('tr');
+      tr.append(el('td', name), el('td', String(count), 'num'));
+      tb.append(tr);
+    }
+  }
+}
+
+function renderIgnore() {
+  let ignored = false;
+  try { ignored = !!localStorage.getItem('nearhi_ignore'); } catch (e) { /* storage unavailable */ }
+  $('ignoreBtn').textContent = ignored ? 'Count my visits again' : "Don't count my visits on this browser";
+  $('ignoreState').textContent = ignored
+    ? 'This browser is not counted, so your own testing stays out of the numbers.'
+    : 'This browser is counted, so your own testing is in the numbers.';
+}
+
+$('ignoreBtn').onclick = () => {
+  try {
+    if (localStorage.getItem('nearhi_ignore')) localStorage.removeItem('nearhi_ignore');
+    else localStorage.setItem('nearhi_ignore', '1');
+  } catch (e) { say('This browser does not allow storing that setting.'); }
+  renderIgnore();
+};
+
+async function load() {
+  const [reports, bans, stats, reach] = await Promise.all([api('/admin/reports'), api('/admin/bans'), api('/admin/stats'), api('/admin/reach?days=14')]);
+  renderReports(reports);
+  renderBans(bans);
+  renderLive(stats);
+  renderReach(reach);
+  renderIgnore();
+  $('login').classList.add('hidden');
+  $('panel').classList.remove('hidden');
+  $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+async function signIn() {
+  token = $('token').value.trim() || token;
+  $('token').value = '';
+  try {
+    say('Checking…');
+    await load();
+    sessionStorage.setItem(KEY, token);   // kept only until this tab closes
+    say('');
+  } catch (e) { token = ''; say(e.message); }
+}
+
+$('signin').onclick = signIn;
+$('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') signIn(); });
+$('refresh').onclick = () => load().then(() => say('')).catch(e => say(e.message));
+$('signout').onclick = () => { sessionStorage.removeItem(KEY); token = ''; location.reload(); };
+// the live numbers refresh by themselves while the page is open and you are signed in
+setInterval(() => {
+  if (token && document.visibilityState === 'visible' && !$('panel').classList.contains('hidden')) {
+    api('/admin/stats').then(renderLive).catch(() => {});
+  }
+}, 5000);
+if (token) signIn();
+</script>
+</body>
+</html>

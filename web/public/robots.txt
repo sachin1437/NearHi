@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /ws
+Disallow: /ice-servers
+Disallow: /status
+Disallow: /hit
+
+Sitemap: https://nearhi.in/sitemap.xml
