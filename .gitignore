@@ -8,3 +8,7 @@ dump.rdb
 static/vendor/
 static/models/
 evidence/
+data/
+*.db
+*.db-wal
+*.db-shm

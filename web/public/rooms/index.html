@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NearHi Rooms: group chat and video</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://nearhi.in/rooms/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#f7f4ed">
+<script>try{var t=localStorage.getItem('nh-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/rooms/rooms.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="nh-mark" viewBox="0 0 645 554"><path fill-rule="evenodd" d="M564.0 198.4 L560.0 197.1 L556.0 194.4 L553.6 192.0 L532.0 165.3 L517.8 145.0 L505.3 124.0 L494.8 103.0 L490.8 91.0 L489.6 85.0 L489.4 81.0 L488.5 77.0 L488.5 70.0 L489.4 66.0 L489.6 62.0 L491.8 53.0 L493.8 47.0 L496.7 41.0 L504.6 29.0 L516.0 17.6 L526.0 10.8 L536.0 5.8 L545.0 2.8 L555.0 0.6 L569.0 -0.5 L585.0 1.8 L600.0 6.7 L613.3 14.0 L618.0 17.6 L628.5 28.0 L635.2 37.0 L640.2 47.0 L644.4 61.0 L644.6 66.0 L645.5 70.0 L645.5 78.0 L644.6 82.0 L644.4 86.0 L641.2 98.0 L635.3 112.0 L624.2 132.0 L612.2 150.0 L603.0 162.3 L586.4 182.0 L573.0 195.4 L568.0 198.2ZM571.0 106.4 L579.0 104.1 L584.0 101.2 L590.2 95.0 L593.3 90.0 L595.4 84.0 L595.4 72.0 L594.2 68.0 L591.2 62.0 L584.0 54.8 L579.0 51.8 L572.0 49.8 L563.0 49.6 L558.0 50.8 L550.0 54.8 L543.6 61.0 L539.8 68.0 L538.6 72.0 L537.7 78.0 L538.8 85.0 L541.7 92.0 L543.6 95.0 L549.0 100.4 L553.0 103.1 L558.0 105.2 L563.0 106.4ZM16.0 534.5 L10.8 528.0 L5.9 520.0 L2.8 513.0 L-0.5 498.0 L-0.5 147.0 L1.8 136.0 L4.8 127.0 L7.8 121.0 L16.6 108.0 L26.5 98.0 L35.0 91.8 L44.0 86.8 L54.0 82.8 L68.0 79.6 L73.0 79.4 L77.0 78.5 L88.0 78.6 L91.0 79.4 L96.0 79.6 L110.0 82.8 L120.0 86.7 L133.0 93.8 L139.0 98.6 L147.0 106.5 L153.2 115.0 L158.1 124.0 L160.2 129.0 L162.2 136.0 L162.7 140.0 L164.0 140.8 L167.5 138.0 L171.0 133.5 L184.5 120.0 L202.7 105.0 L218.0 94.8 L225.0 90.8 L244.0 81.8 L271.0 72.8 L298.0 67.6 L306.0 67.4 L310.0 66.5 L342.0 66.5 L346.0 67.4 L354.0 67.6 L357.0 68.4 L361.0 68.6 L377.0 71.6 L393.0 75.8 L407.0 80.8 L426.0 89.8 L437.0 96.8 L446.0 103.6 L459.0 116.5 L469.0 130.5 L474.2 141.0 L479.2 155.0 L481.4 165.0 L481.6 171.0 L482.5 175.0 L482.5 185.0 L481.6 189.0 L481.4 195.0 L478.2 209.0 L476.2 215.0 L469.2 230.0 L463.0 239.3 L457.4 246.0 L453.0 250.4 L442.6 259.0 L439.8 263.0 L436.8 269.0 L436.4 276.0 L435.5 280.0 L435.4 298.0 L434.6 301.0 L434.4 309.0 L433.0 311.4 L431.0 312.4 L428.0 312.4 L424.0 310.4 L421.0 306.5 L410.6 296.0 L408.0 292.5 L388.0 272.8 L381.0 269.8 L375.0 268.6 L370.0 268.4 L359.0 266.2 L340.0 260.2 L331.0 256.3 L324.0 252.2 L304.0 237.8 L293.4 232.0 L280.0 226.8 L272.0 224.6 L260.0 222.6 L233.0 222.6 L221.0 224.8 L211.0 227.8 L194.0 235.8 L186.0 241.6 L174.6 253.0 L168.8 261.0 L161.8 276.0 L158.8 287.0 L157.6 294.0 L157.5 498.0 L154.2 512.0 L149.2 523.0 L144.4 530.0 L136.0 538.4 L124.0 546.1 L114.0 550.2 L95.0 554.4 L63.0 554.5 L46.0 551.2 L40.0 549.2 L31.0 545.2 L22.7 540.0ZM375.0 549.2 L364.0 544.2 L357.7 540.0 L349.6 533.0 L342.8 524.0 L339.3 517.0 L335.8 507.0 L334.6 501.0 L333.5 492.0 L333.7 293.0 L335.0 292.0 L343.0 293.8 L355.0 297.8 L367.0 303.3 L386.0 314.8 L396.3 322.0 L409.0 332.4 L417.0 338.2 L423.0 341.2 L427.0 342.4 L436.0 342.4 L441.0 341.2 L445.0 339.2 L449.5 336.0 L453.2 331.0 L456.2 325.0 L459.8 307.0 L464.8 289.0 L468.9 280.0 L475.8 269.0 L481.0 262.5 L486.0 258.2 L487.3 259.0 L490.4 271.0 L492.4 283.0 L492.6 287.0 L493.4 290.0 L493.6 297.0 L494.5 301.0 L494.6 315.0 L495.5 319.0 L495.5 492.0 L494.6 496.0 L494.4 501.0 L491.2 514.0 L484.2 527.0 L476.0 536.4 L468.0 542.2 L461.0 546.2 L451.0 550.2 L431.0 554.4 L399.0 554.5 L395.0 553.6 L391.0 553.4Z"/></symbol></svg>
+<div class="shell">
+  <aside class="side">
+    <a class="wordmark" href="/"><span class="badge"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>NearHi</a>
+    <a class="side-link" href="/">Home</a>
+    <a class="side-link" href="/talk/">Random chat</a>
+    <a class="side-link on" href="/rooms/">Rooms</a>
+    <a class="side-link" href="/terms/">Terms</a>
+    <a class="side-link" href="/privacy/">Privacy</a>
+    <div class="side-foot">
+      <div class="acct" id="acctBox" hidden>
+        <b id="acctName"></b>
+        <span style="color:var(--muted)">Signed in</span>
+        <div class="row"><button class="btn btn-sm" id="signOut" type="button">Sign out</button><button class="btn btn-sm" id="delAcct" type="button">Delete account</button></div>
+      </div>
+      <button class="btn btn-sm" id="themeBtn" type="button" style="margin-top:10px;width:100%">Switch theme</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="head">
+      <a class="wordmark" href="/"><span class="badge"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>NearHi</a>
+      <a class="btn btn-sm" href="/talk/">Random chat</a>
+    </div>
+
+    <h1 class="title">Rooms. <span class="serif">Pick one and join.</span></h1>
+    <p class="sub">Group chat and video with people you have not met yet. Every room has an owner who sets the rules and can remove anyone. Random chat stays account free, rooms need a free sign in so owners can manage who is inside.</p>
+
+    <!-- signed out -->
+    <section id="vOut" class="card narrow" hidden>
+      <h2>Sign in to continue</h2>
+      <p>You only need a Google account. We keep your Google ID and email to recognise you, nothing is posted anywhere.</p>
+      <div id="gbtn"></div>
+      <div id="devBox" hidden class="stack" style="margin-top:12px">
+        <input type="text" id="devName" value="tester" aria-label="Test name">
+        <button class="btn btn-dark" id="devGo" type="button">Dev login (local only)</button>
+      </div>
+      <p class="err" id="outErr" style="margin-top:10px"></p>
+    </section>
+
+    <!-- profile setup -->
+    <section id="vProfile" class="card narrow" hidden>
+      <h2>Choose a username</h2>
+      <p>This is the name people see in rooms. You cannot change it later, so owners can always tell who they are banning.</p>
+      <div class="stack">
+        <label class="f">Username<small>3 to 20 letters, numbers or underscores</small>
+          <input type="text" id="pName" maxlength="20" autocomplete="off" spellcheck="false"></label>
+        <label class="check"><input type="checkbox" id="pAdult"><span>I am 18 or older and I agree to the <a href="/terms/" target="_blank" rel="noopener">Terms</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+        <p class="err" id="pErr"></p>
+        <button class="btn btn-primary" id="pGo" type="button">Save and continue</button>
+      </div>
+    </section>
+
+    <!-- signed in -->
+    <section id="vIn" hidden>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary btn-lg" id="openCreate" type="button">Create a room</button>
+        <span style="color:var(--muted);font-size:14px">Signed in as <b id="inName"></b></span>
+      </div>
+
+      <form id="createForm" class="card stack" style="margin-top:16px;max-width:640px" hidden>
+        <h2>New room</h2>
+        <label class="f">Title<input type="text" id="cTitle" maxlength="60" placeholder="Late night startup ideas"></label>
+        <label class="f">Rules<small>Optional. People see this before and while they are inside.</small>
+          <textarea id="cRules" maxlength="500" placeholder="Be kind. English only. No spam."></textarea></label>
+        <div class="f">Type
+          <div class="choice">
+            <label><input type="radio" name="cMode" value="video" checked> Video and text (up to 6)</label>
+            <label><input type="radio" name="cMode" value="text"> Text only (up to 30)</label>
+          </div></div>
+        <label class="f">Max people<input type="number" id="cMax" min="2" max="6" value="6"></label>
+        <div class="f">Who can join
+          <div class="choice">
+            <label><input type="radio" name="cPolicy" value="open" checked> Anyone, instantly</label>
+            <label><input type="radio" name="cPolicy" value="approval"> I approve each person</label>
+          </div></div>
+        <label class="check"><input type="checkbox" id="cListed" checked><span>List this room publicly so strangers can find it. Untick for a link only room.</span></label>
+        <p class="err" id="cErr"></p>
+        <div style="display:flex;gap:8px"><button class="btn btn-primary" id="cGo" type="submit">Open room</button><button class="btn" id="cCancel" type="button">Cancel</button></div>
+        <p class="notice" style="margin:0">Closing the tab for more than a minute closes the room. You are responsible for your room, and everyone can report anyone.</p>
+      </form>
+
+      <h2 style="margin:28px 0 0;font-size:20px;letter-spacing:-0.02em">Open right now</h2>
+      <div id="list" class="rooms"></div>
+      <div id="empty" class="empty" hidden>No public rooms yet. Create the first one.</div>
+    </section>
+  </main>
+</div>
+
+<script src="/rooms/common.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const { api, esc } = NH;
+  NH.themeToggle($('themeBtn'));
+  let account = null, timer = null, cfg = {};
+
+  function nextPath() {
+    const n = new URLSearchParams(location.search).get('next');
+    return n && n.startsWith('/rooms/') && !n.startsWith('//') ? n : null;
+  }
+  function show(which) {
+    ['vOut', 'vProfile', 'vIn'].forEach((v) => { $(v).hidden = v !== which; });
+    $('acctBox').hidden = !account;
+    if (account) { $('acctName').textContent = account.username || 'New account'; $('inName').textContent = account.username || ''; }
+  }
+  function route() {
+    if (!account) { show('vOut'); return; }
+    if (account.needs_profile) { show('vProfile'); return; }
+    const n = nextPath();
+    if (n) { location.replace(n); return; }
+    show('vIn');
+    loadList();
+    clearInterval(timer);
+    timer = setInterval(loadList, 8000);
+  }
+
+  async function loadList() {
+    try {
+      const { rooms } = await api('GET', '/api/rooms');
+      $('empty').hidden = rooms.length > 0;
+      $('list').innerHTML = rooms.map((r) => {
+        const full = r.count >= r.max;
+        return '<div class="room"><div class="tags">' +
+          '<span class="tag live">' + (r.mode === 'video' ? 'VIDEO' : 'TEXT') + '</span>' +
+          '<span class="tag">' + r.count + '/' + r.max + '</span>' +
+          (r.policy === 'approval' ? '<span class="tag violet">APPROVAL</span>' : '') +
+          (r.locked ? '<span class="tag">LOCKED</span>' : '') + '</div>' +
+          '<h3>' + esc(r.title) + '</h3>' +
+          '<p>' + (r.rules ? esc(r.rules) : 'No rules set. Be decent.') + '</p>' +
+          '<div class="by">Owner: ' + esc(r.owner) + '</div>' +
+          '<a class="btn btn-primary" href="/rooms/room/?r=' + encodeURIComponent(r.id) + '"' + (full || r.locked ? ' aria-disabled="true"' : '') + '>' +
+          (full ? 'Room full' : r.locked ? 'Locked' : 'Join this room') + '</a></div>';
+      }).join('');
+    } catch (e) { /* keep showing the last list */ }
+  }
+
+  /* Google sign in */
+  function initGoogle() {
+    if (!cfg.google_client_id) {
+      if (!cfg.dev_login) $('outErr').textContent = 'Sign in is not set up on this server yet.';
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = () => {
+      google.accounts.id.initialize({
+        client_id: cfg.google_client_id,
+        callback: async (resp) => {
+          $('outErr').textContent = '';
+          try { account = (await api('POST', '/auth/google', { credential: resp.credential })).account; route(); }
+          catch (e) { $('outErr').textContent = e.message; }
+        },
+      });
+      google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with' });
+    };
+    document.head.appendChild(s);
+  }
+  $('devGo').onclick = async () => {
+    try { account = (await api('POST', '/auth/dev', { name: $('devName').value })).account; route(); }
+    catch (e) { $('outErr').textContent = e.message; }
+  };
+
+  $('pGo').onclick = async () => {
+    $('pErr').textContent = '';
+    try {
+      account = (await api('POST', '/auth/profile', { username: $('pName').value.trim(), adult: $('pAdult').checked })).account;
+      route();
+    } catch (e) { $('pErr').textContent = e.message; }
+  };
+
+  $('signOut').onclick = async () => {
+    try { await api('POST', '/auth/logout'); } catch (e) {}
+    location.reload();
+  };
+  $('delAcct').onclick = async () => {
+    if (!confirm('Delete your account and close any room you own? This cannot be undone.')) return;
+    try { await api('DELETE', '/auth/me'); } catch (e) { alert(e.message); return; }
+    account = null; clearInterval(timer); show('vOut');
+  };
+
+  /* Create room */
+  const form = $('createForm');
+  $('openCreate').onclick = () => { form.hidden = false; $('cTitle').focus(); };
+  $('cCancel').onclick = () => { form.hidden = true; };
+  function syncMax() {
+    const text = form.elements.cMode.value === 'text';
+    const cap = text ? 30 : 6;
+    $('cMax').max = cap;
+    if (+$('cMax').value > cap || !$('cMax').dataset.touched) $('cMax').value = cap;
+  }
+  $('cMax').addEventListener('input', () => { $('cMax').dataset.touched = '1'; });
+  form.querySelectorAll('input[name=cMode]').forEach((r) => r.addEventListener('change', syncMax));
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    $('cErr').textContent = '';
+    $('cGo').disabled = true;
+    try {
+      const { room } = await api('POST', '/api/rooms', {
+        title: $('cTitle').value, rules: $('cRules').value, mode: form.elements.cMode.value,
+        max: +$('cMax').value, policy: form.elements.cPolicy.value, listed: $('cListed').checked,
+      });
+      location.href = '/rooms/room/?r=' + encodeURIComponent(room.id);
+    } catch (e) {
+      if (e.status === 409 && e.data && e.data.room_id) { location.href = '/rooms/room/?r=' + encodeURIComponent(e.data.room_id); return; }
+      $('cErr').textContent = e.message;
+    } finally { $('cGo').disabled = false; }
+  });
+
+  (async function boot() {
+    try { cfg = await api('GET', '/auth/config'); } catch (e) {}
+    $('devBox').hidden = !cfg.dev_login;
+    account = await NH.me();
+    if (!account) initGoogle();
+    route();
+  })();
+})();
+</script>
+</body>
+</html>
