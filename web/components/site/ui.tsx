@@ -5,10 +5,10 @@ import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export const primaryButton =
-  "shine group inline-flex items-center justify-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-semibold text-paper shadow-[0_14px_34px_-16px_rgba(21,19,27,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-ink-soft hover:shadow-[0_20px_44px_-18px_rgba(21,19,27,0.55)] active:translate-y-0";
+  "shine group inline-flex items-center justify-center gap-2.5 rounded-full bg-ink px-6 py-3.5 text-[15px] font-semibold text-cream dark:bg-lime dark:text-ink shadow-[0_14px_34px_-16px_rgba(21,19,27,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-ink-soft dark:hover:bg-lime-deep hover:shadow-[0_20px_44px_-18px_rgba(21,19,27,0.55)] active:translate-y-0";
 
 export const secondaryButton =
-  "group inline-flex items-center justify-center gap-2.5 rounded-full border border-ink/12 bg-white/60 px-6 py-3.5 text-[15px] font-semibold text-ink backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-ink/25 hover:bg-white active:translate-y-0";
+  "group inline-flex items-center justify-center gap-2.5 rounded-full border border-fg/12 bg-surface/60 px-6 py-3.5 text-[15px] font-semibold text-fg backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-fg/25 hover:bg-surface active:translate-y-0";
 
 export const limeButton =
   "shine group inline-flex items-center justify-center gap-2.5 rounded-full bg-lime px-6 py-3.5 text-[15px] font-semibold text-ink shadow-[0_16px_40px_-18px_rgba(221,247,122,0.9)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#e7ff92] active:translate-y-0";
@@ -106,7 +106,7 @@ export function Logo({ tone = "light", className }: { tone?: "light" | "dark"; c
       <span
         className={cn(
           "font-display text-[23px] leading-none font-bold tracking-[-0.05em]",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-cream" : "text-fg",
         )}
       >
         nearhi

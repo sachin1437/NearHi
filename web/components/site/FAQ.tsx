@@ -10,7 +10,7 @@ export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="scroll-mt-24 border-t border-ink/8 bg-paper-warm py-20 sm:py-28 lg:py-32">
+    <section id="faq" className="scroll-mt-24 border-t border-fg/8 bg-paper-warm py-20 sm:py-28 lg:py-32">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-7 lg:px-10">
         <div className="grid gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
           <div className="lg:sticky lg:top-28 lg:self-start">
@@ -27,7 +27,7 @@ export function FAQ() {
             </Reveal>
 
             <Reveal delay={130}>
-              <div className="noise relative mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-ink p-5 text-paper">
+              <div className="noise relative mt-8 overflow-hidden rounded-[24px] border border-white/10 bg-ink p-5 text-cream">
                 <div
                   className="pointer-events-none absolute -top-10 -right-6 h-28 w-28 rounded-full bg-violet/40 blur-2xl"
                   aria-hidden="true"
@@ -37,16 +37,16 @@ export function FAQ() {
                     <Mail className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <div>
-                    <p className="text-[12px] font-semibold text-paper">The NearHi team</p>
-                    <p className="text-[10.5px] text-paper/45">replies by email</p>
+                    <p className="text-[12px] font-semibold text-cream">The NearHi team</p>
+                    <p className="text-[10.5px] text-cream/45">replies by email</p>
                   </div>
                 </div>
-                <p className="relative mt-3 font-serif text-[19px] leading-snug text-paper/85">
+                <p className="relative mt-3 font-serif text-[19px] leading-snug text-cream/85">
                   “Ask us anything, even the weird stuff.”
                 </p>
                 <a
                   href="mailto:nearhi.in@gmail.com?subject=NearHi%20question"
-                  className="group relative mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3.5 py-2 text-[11px] font-semibold text-paper transition-colors hover:bg-white/15"
+                  className="group relative mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3.5 py-2 text-[11px] font-semibold text-cream transition-colors hover:bg-surface/15"
                 >
                   <Mail className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
                   Email us
@@ -60,11 +60,11 @@ export function FAQ() {
           </div>
 
           <Reveal delay={80}>
-            <div className="border-t border-ink/10">
+            <div className="border-t border-fg/10">
               {faqs.map((faq, index) => {
                 const isOpen = open === index;
                 return (
-                  <div key={faq.q} className="border-b border-ink/10">
+                  <div key={faq.q} className="border-b border-fg/10">
                     <h3>
                       <button
                         type="button"
@@ -77,7 +77,7 @@ export function FAQ() {
                         <span
                           className={cn(
                             "text-[14.5px] font-semibold text-pretty transition-colors duration-200 sm:text-[15.5px]",
-                            isOpen ? "text-ink" : "text-ink/80 group-hover:text-ink",
+                            isOpen ? "text-fg" : "text-fg/80 group-hover:text-fg",
                           )}
                         >
                           {faq.q}
@@ -86,8 +86,8 @@ export function FAQ() {
                           className={cn(
                             "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-all duration-300",
                             isOpen
-                              ? "rotate-45 border-ink bg-ink text-paper"
-                              : "border-ink/12 bg-white/50 text-ink/55 group-hover:border-ink/25 group-hover:text-ink",
+                              ? "rotate-45 border-ink bg-ink text-cream dark:border-lime dark:bg-lime dark:text-ink"
+                              : "border-fg/12 bg-surface/50 text-fg/55 group-hover:border-fg/25 group-hover:text-fg",
                           )}
                           aria-hidden="true"
                         >

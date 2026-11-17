@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource/instrument-serif/400.css";
 @import "@fontsource/instrument-serif/400-italic.css";
@@ -13,6 +14,9 @@
   --color-paper-deep: #efeade;
   --color-paper-warm: #fbf8f1;
   --color-ink: #15131b;
+  --color-fg: #15131b;
+  --color-cream: #f7f4ed;
+  --color-surface: #ffffff;
   --color-ink-soft: #24202c;
   --color-ink-muted: #38323f;
   --color-muted: #6a6474;
@@ -140,6 +144,39 @@
   }
 }
 
+/* Dark theme. Page surfaces and text flip; fixed dark panels stay dark; app mockups keep the light look. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #120f17;
+  --color-paper-deep: #1a1622;
+  --color-paper-warm: #181420;
+  --color-fg: #f3efe6;
+  --color-surface: #2a2434;
+  --color-muted: #a8a2b4;
+  --color-line: #2c2735;
+  --color-lilac: #2b2352;
+  --color-lilac-deep: #3b3070;
+  --color-violet-dark: #b5a2ff;
+  --color-ink: #1d1927;
+  --color-butter: #3a3320;
+  --color-coral-soft: #3b2420;
+}
+html[data-theme="dark"] .theme-light {
+  color-scheme: light;
+  --color-paper: #f7f4ed;
+  --color-paper-deep: #efeade;
+  --color-paper-warm: #fbf8f1;
+  --color-fg: #15131b;
+  --color-surface: #ffffff;
+  --color-muted: #6a6474;
+  --color-line: #e3ddd1;
+  --color-lilac: #e9e2ff;
+  --color-lilac-deep: #d9cdff;
+  --color-violet-dark: #5534d8;
+  --color-ink: #15131b;
+  color: var(--color-fg);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -147,7 +184,7 @@
   }
 
   body {
-    @apply bg-paper font-sans text-ink antialiased;
+    @apply bg-paper font-sans text-fg antialiased;
     overflow-x: hidden;
   }
 

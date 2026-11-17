@@ -15,7 +15,7 @@ export function SocialProof() {
   return (
     <section
       aria-label="The short version of how NearHi works"
-      className="relative border-y border-ink/8 bg-paper-warm py-9 sm:py-11"
+      className="relative border-y border-fg/8 bg-paper-warm py-9 sm:py-11"
     >
       <div className="mx-auto max-w-[1240px] px-5 sm:px-7 lg:px-10">
         <p className="text-center text-[10.5px] font-semibold tracking-[0.2em] text-muted uppercase">
@@ -36,7 +36,7 @@ export function SocialProof() {
             <span
               key={`${logo.name}-${index}`}
               aria-hidden={index >= facts.length}
-              className={`${logo.className} shrink-0 text-ink/45 transition-colors duration-300 hover:text-ink/80`}
+              className={`${logo.className} shrink-0 text-fg/45 transition-colors duration-300 hover:text-fg/80`}
             >
               {logo.name}
             </span>
@@ -45,12 +45,12 @@ export function SocialProof() {
       </div>
 
       <div className="mx-auto mt-9 max-w-[1240px] px-5 sm:px-7 lg:px-10">
-        <dl className="grid grid-cols-3 divide-x divide-ink/10 border-t border-ink/8 pt-7">
+        <dl className="grid grid-cols-3 divide-x divide-ink/10 border-t border-fg/8 pt-7">
           {stats.map((stat, index) => (
             <Reveal key={stat.value} delay={index * 90} className="px-3 first:pl-0 sm:px-7">
               <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:items-baseline sm:gap-2.5 sm:text-left">
                 <dt className="sr-only">{stat.label}</dt>
-                <dd className="font-display text-[23px] font-semibold tracking-[-0.045em] text-ink sm:text-[30px]">
+                <dd className="font-display text-[23px] font-semibold tracking-[-0.045em] text-fg sm:text-[30px]">
                   {stat.value}
                 </dd>
                 <dd className="max-w-[10rem] text-[10.5px] leading-snug text-muted sm:text-[12px]">

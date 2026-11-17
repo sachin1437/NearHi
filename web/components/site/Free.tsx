@@ -32,7 +32,7 @@ export function Free() {
         <Reveal delay={100} scale className="mx-auto mt-12 max-w-[640px]">
           <div
             className={cn(
-              "noise relative overflow-hidden rounded-[28px] border border-white/10 bg-ink p-6 text-paper shadow-soft sm:p-9",
+              "noise relative overflow-hidden rounded-[28px] border border-white/10 bg-ink p-6 text-cream shadow-soft sm:p-9",
             )}
           >
             <div
@@ -46,15 +46,15 @@ export function Free() {
             <div className="relative">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-display text-[20px] font-semibold tracking-[-0.035em] text-paper">NearHi</p>
-                  <p className="mt-1 text-[12px] text-paper/50">Everything, for now.</p>
+                  <p className="font-display text-[20px] font-semibold tracking-[-0.035em] text-cream">NearHi</p>
+                  <p className="mt-1 text-[12px] text-cream/50">Everything, for now.</p>
                 </div>
                 <span className="rounded-full bg-lime px-2.5 py-1 text-[9.5px] font-bold tracking-[0.08em] text-ink uppercase">
                   free
                 </span>
               </div>
 
-              <p className="mt-6 font-display text-[64px] leading-none font-semibold tracking-[-0.06em] text-paper sm:text-[76px]">
+              <p className="mt-6 font-display text-[64px] leading-none font-semibold tracking-[-0.06em] text-cream sm:text-[76px]">
                 Free<span className="text-lime">.</span>
               </p>
 
@@ -66,7 +66,7 @@ export function Free() {
                     <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-lime/15 text-lime">
                       <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
                     </span>
-                    <span className="text-[13.5px] leading-snug text-paper/75">{item}</span>
+                    <span className="text-[13.5px] leading-snug text-cream/75">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -83,7 +83,7 @@ export function Free() {
         </Reveal>
 
         <Reveal delay={160}>
-          <div className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[12px] font-medium text-ink/60">
+          <div className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[12px] font-medium text-fg/60">
             {[
               { icon: CreditCard, label: "No card needed" },
               { icon: Lock, label: "No account to make" },

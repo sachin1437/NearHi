@@ -20,7 +20,7 @@ const circles = [
     alt: "",
     position: "top-10 right-2 sm:right-5",
     size: "h-11 w-11 sm:h-[52px] sm:w-[52px]",
-    ring: "ring-paper",
+    ring: "ring-cream",
     delay: "-2s",
     label: "38 km",
   },
@@ -38,7 +38,7 @@ const circles = [
     alt: "",
     position: "right-6 bottom-1 sm:right-10",
     size: "h-12 w-12 sm:h-14 sm:w-14",
-    ring: "ring-paper",
+    ring: "ring-cream",
     delay: "-1s",
     label: "21 km",
   },
@@ -49,7 +49,7 @@ export function CTA() {
     <section id="download" className="relative scroll-mt-20 py-16 sm:py-24 lg:py-28">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-7 lg:px-10">
         <Reveal scale>
-          <div className="noise relative overflow-hidden rounded-[30px] bg-ink text-paper shadow-[0_50px_100px_-45px_rgba(21,19,27,0.65)] sm:rounded-[40px]">
+          <div className="noise relative overflow-hidden rounded-[30px] bg-ink text-cream shadow-[0_50px_100px_-45px_rgba(21,19,27,0.65)] sm:rounded-[40px]">
             <div
               className="pointer-events-none absolute -top-44 -left-24 h-[430px] w-[430px] rounded-full bg-[radial-gradient(circle,rgba(108,75,244,0.55),transparent_68%)] blur-2xl"
               aria-hidden="true"
@@ -78,12 +78,12 @@ export function CTA() {
               <div>
                 <Reveal>
                   <Eyebrow tone="dark">Ready when you are</Eyebrow>
-                  <h2 className="h-display mt-5 text-[clamp(2.9rem,8.4vw,4rem)] text-balance text-paper sm:text-[clamp(3.6rem,6.6vw,4.6rem)]">
+                  <h2 className="h-display mt-5 text-[clamp(2.9rem,8.4vw,4rem)] text-balance text-cream sm:text-[clamp(3.6rem,6.6vw,4.6rem)]">
                     Enough lurking.
                     <br />
                     Say <span className="serif-accent text-lime">hi.</span>
                   </h2>
-                  <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-paper/55 sm:text-[15.5px]">
+                  <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-cream/55 sm:text-[15.5px]">
                     Pick a distance, allow your camera and location, say hi. It takes about ten seconds and there is nothing to install.
                   </p>
 
@@ -102,14 +102,14 @@ export function CTA() {
                       href="#faq"
                       className={cn(
                         secondaryButton,
-                        "w-full border-white/15 bg-white/5 text-paper hover:border-white/30 hover:bg-white/10 sm:w-auto",
+                        "w-full border-white/15 bg-white/5 text-cream hover:border-white/30 hover:bg-white/10 sm:w-auto",
                       )}
                     >
                       Read the FAQ
                     </a>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-medium text-paper/45">
+                  <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-medium text-cream/45">
                     {["Free right now", "No account", "18+ only"].map((item) => (
                       <span key={item} className="inline-flex items-center gap-1.5">
                         <Check className="h-3.5 w-3.5 text-lime" aria-hidden="true" />
@@ -122,20 +122,20 @@ export function CTA() {
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-lime">
                       <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                     </span>
-                    <p className="text-[11px] leading-relaxed text-paper/50">
+                    <p className="text-[11px] leading-relaxed text-cream/50">
                       Nothing is recorded. Skip or stop at any moment.
                     </p>
                   </div>
 
                   <div className="mt-7">
-                    <p className="mb-2.5 text-[9.5px] font-semibold tracking-[0.16em] text-paper/35 uppercase">
+                    <p className="mb-2.5 text-[9.5px] font-semibold tracking-[0.16em] text-cream/35 uppercase">
                       Works in your browser
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {["Chrome", "Safari", "Edge", "Firefox"].map((name) => (
                         <span
                           key={name}
-                          className="rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-paper/70"
+                          className="rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-cream/70"
                         >
                           {name}
                         </span>
@@ -161,17 +161,17 @@ export function CTA() {
                       <span className="text-[8.5px] font-bold tracking-[0.14em] uppercase opacity-55">
                         new match
                       </span>
-                      <span className="grid h-7 w-7 place-items-center rounded-full bg-ink/10">
-                        <Sparkles className="h-3.5 w-3.5 text-ink/70" aria-hidden="true" />
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-fg/10">
+                        <Sparkles className="h-3.5 w-3.5 text-fg/70" aria-hidden="true" />
                       </span>
                     </div>
                     <p className="font-display mt-1 text-[68px] leading-[0.85] font-bold tracking-[-0.08em] sm:text-[78px]">
                       hi<span className="text-violet-dark">.</span>
                     </p>
-                    <p className="mt-3 text-[11px] leading-snug font-medium text-ink/65">
+                    <p className="mt-3 text-[11px] leading-snug font-medium text-fg/65">
                       someone near you is one tap away. no profile required.
                     </p>
-                    <div className="mt-4 flex items-center justify-between border-t border-ink/15 pt-3">
+                    <div className="mt-4 flex items-center justify-between border-t border-fg/15 pt-3">
                       <div className="flex -space-x-2">
                         {[people.maya.avatar, people.leo.avatar, people.priya.avatar].map((src) => (
                           <img
@@ -213,18 +213,18 @@ export function CTA() {
                           <MapPin className="h-2.5 w-2.5 text-lime" aria-hidden="true" />
                         </span>
                       </div>
-                      <span className="mt-1 block text-center text-[8px] font-semibold text-paper/50">
+                      <span className="mt-1 block text-center text-[8px] font-semibold text-cream/50">
                         {circle.label}
                       </span>
                     </div>
                   ))}
 
-                  <div className="animate-float-slow absolute top-[50%] -right-1 hidden sm:flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[8.5px] font-semibold text-paper backdrop-blur-md sm:top-[50%] sm:-right-3">
+                  <div className="animate-float-slow absolute top-[50%] -right-1 hidden sm:flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[8.5px] font-semibold text-cream backdrop-blur-md sm:top-[50%] sm:-right-3">
                     <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden="true" />
                     10 km to anywhere
                   </div>
                   <div
-                    className="animate-float absolute -bottom-1 left-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[8.5px] font-semibold text-paper backdrop-blur-md sm:left-6"
+                    className="animate-float absolute -bottom-1 left-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[8.5px] font-semibold text-cream backdrop-blur-md sm:left-6"
                     style={{ animationDelay: "-3s" }}
                   >
                     skip anytime

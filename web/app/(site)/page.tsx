@@ -62,7 +62,7 @@ export default function Home() {
       <NhSprite />
       <a
         href="#main-content"
-        className="sr-only z-[120] rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-paper focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+        className="sr-only z-[120] rounded-full bg-ink px-5 py-3 text-[13px] font-semibold text-cream focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
       >
         Skip to content
       </a>

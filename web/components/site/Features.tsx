@@ -90,7 +90,7 @@ export function Features() {
             {alsoInside.map((item) => (
               <span
                 key={item.label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-ink/9 bg-white/55 px-3 py-1.5 text-[11.5px] font-medium text-ink/70 backdrop-blur-sm transition-colors hover:border-ink/20 hover:text-ink"
+                className="inline-flex items-center gap-1.5 rounded-full border border-fg/9 bg-surface/55 px-3 py-1.5 text-[11.5px] font-medium text-fg/70 backdrop-blur-sm transition-colors hover:border-fg/20 hover:text-fg"
               >
                 <item.icon className="h-3.5 w-3.5 text-violet-dark" aria-hidden="true" />
                 {item.label}
@@ -117,7 +117,7 @@ function FeatureShell({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[26px] border border-ink/8 p-5 transition-all duration-500 hover:-translate-y-1 hover:shadow-card sm:p-7",
+        "group relative flex flex-col overflow-hidden rounded-[26px] border border-fg/8 p-5 transition-all duration-500 hover:-translate-y-1 hover:shadow-card sm:p-7",
         className,
       )}
     >
@@ -176,11 +176,11 @@ function RadiusCard() {
 
       <div className="relative mt-5">
         <div className="absolute -right-8 -bottom-10 h-36 w-36 rounded-full bg-violet/12 blur-2xl" aria-hidden="true" />
-        <div className="relative rounded-2xl border border-ink/7 bg-paper p-2.5">
+        <div className="relative rounded-2xl border border-fg/7 bg-paper p-2.5">
           <div className="mb-2 flex items-center justify-between px-1">
             <div className="flex items-center gap-1.5">
               <span className="animate-pulse-dot h-1.5 w-1.5 rounded-full bg-[#4CAF6E]" aria-hidden="true" />
-              <span className="text-[10px] font-semibold text-ink/65">searching within {radii[active]!.label}</span>
+              <span className="text-[10px] font-semibold text-fg/65">searching within {radii[active]!.label}</span>
             </div>
             <span className="text-[9.5px] font-medium text-muted">illustration</span>
           </div>
@@ -209,7 +209,7 @@ function RadiusCard() {
                   key={`${dot.x}-${dot.y}`}
                   className={cn(
                     "absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 transition-all duration-500",
-                    inside ? "bg-violet ring-white" : "bg-ink/15 ring-transparent",
+                    inside ? "bg-violet ring-white" : "bg-fg/15 ring-transparent",
                   )}
                   style={{ left: `${dot.x}%`, top: `${dot.y}%` }}
                   aria-hidden="true"
@@ -228,8 +228,8 @@ function RadiusCard() {
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-[10.5px] font-semibold transition-colors duration-200",
                   active === index
-                    ? "border-ink bg-ink text-paper"
-                    : "border-ink/10 bg-white/60 text-ink/60 hover:border-ink/25",
+                    ? "border-ink bg-ink text-cream dark:border-lime dark:bg-lime dark:text-ink"
+                    : "border-fg/10 bg-surface/60 text-fg/60 hover:border-fg/25",
                 )}
               >
                 {radius.label}
@@ -257,16 +257,16 @@ function SkipCard() {
     <FeatureShell
       icon={Phone}
       iconClassName="border-white/10 bg-white/10 text-lime"
-      className="noise border-white/10 bg-ink text-paper"
+      className="noise border-white/10 bg-ink text-cream"
     >
       <div className="relative z-10 flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-display text-[22px] leading-tight font-semibold tracking-[-0.035em] text-paper sm:text-[25px]">
+            <h3 className="font-display text-[22px] leading-tight font-semibold tracking-[-0.035em] text-cream sm:text-[25px]">
               Not feeling it?
               <br className="hidden xl:block" /> Skip. Next.
             </h3>
-            <p className="mt-2 max-w-[26rem] text-[13.5px] leading-relaxed text-paper/55">
+            <p className="mt-2 max-w-[26rem] text-[13.5px] leading-relaxed text-cream/55">
               One tap moves you on to someone new. No awkward goodbye, no hard feelings.
             </p>
           </div>
@@ -302,8 +302,8 @@ function SkipCard() {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-semibold text-paper">Stranger</p>
-                  <p className="truncate text-[10px] text-paper/45">{km} km away</p>
+                  <p className="text-[12px] font-semibold text-cream">Stranger</p>
+                  <p className="truncate text-[10px] text-cream/45">{km} km away</p>
                 </div>
                 <button
                   type="button"
@@ -312,7 +312,7 @@ function SkipCard() {
                   aria-label={gone ? "Bring this person back" : "Skip this person"}
                   className={cn(
                     "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-all duration-300",
-                    gone ? "bg-lime text-ink" : "bg-white/8 text-paper/70 hover:bg-lime hover:text-ink",
+                    gone ? "bg-lime text-ink" : "bg-white/8 text-cream/70 hover:bg-lime hover:text-ink",
                   )}
                 >
                   <SkipForward className="h-3 w-3" aria-hidden="true" />
@@ -331,15 +331,15 @@ function SkipCard() {
             { time: "stop", text: "Ends the chat. Nothing is recorded." },
           ].map((item) => (
             <div key={item.time} className="flex items-center gap-2 px-1 py-0.5">
-              <span className="font-mono text-[8px] tabular-nums text-paper/35 uppercase">{item.time}</span>
+              <span className="font-mono text-[8px] tabular-nums text-cream/35 uppercase">{item.time}</span>
               <span className="h-px flex-1 bg-white/8" aria-hidden="true" />
-              <span className="text-[9px] font-medium text-paper/55">{item.text}</span>
+              <span className="text-[9px] font-medium text-cream/55">{item.text}</span>
             </div>
           ))}
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3">
-          <p className="text-[9px] font-medium tracking-[0.1em] text-paper/30 uppercase">illustrative preview</p>
+          <p className="text-[9px] font-medium tracking-[0.1em] text-cream/30 uppercase">illustrative preview</p>
           <p className="flex items-center gap-1 text-[9.5px] font-semibold text-lime">
             <span className="h-1 w-1 rounded-full bg-lime" aria-hidden="true" />
             stock photos
@@ -354,7 +354,7 @@ function TextCard() {
   return (
     <FeatureShell
       icon={MessageCircle}
-      iconClassName="border-ink/5 bg-white/70 text-violet-dark"
+      iconClassName="border-fg/5 bg-surface/70 text-violet-dark"
       className="bg-lilac"
     >
       <h3 className="font-display text-[21px] leading-tight font-semibold tracking-[-0.035em]">
@@ -365,7 +365,7 @@ function TextCard() {
         Prefer typing the first hello? Use the text chat while you get comfortable.
       </p>
 
-      <div className="mt-5 flex-1 rounded-2xl border border-white/80 bg-white/75 p-3.5 shadow-[0_10px_30px_-20px_rgba(52,40,90,0.5)] backdrop-blur-sm">
+      <div className="mt-5 flex-1 rounded-2xl border border-white/80 bg-surface/75 p-3.5 shadow-[0_10px_30px_-20px_rgba(52,40,90,0.5)] backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <span className="rounded-md bg-ink px-1.5 py-1 text-[8px] font-bold tracking-[0.09em] text-lime uppercase">
             text chat
@@ -376,19 +376,19 @@ function TextCard() {
           </span>
         </div>
         <div className="mt-3 space-y-1.5">
-          <p className="max-w-[80%] rounded-xl rounded-bl-sm bg-white px-2.5 py-1.5 text-[10.5px] text-ink/75 ring-1 ring-ink/6">
+          <p className="max-w-[80%] rounded-xl rounded-bl-sm bg-surface px-2.5 py-1.5 text-[10.5px] text-fg/75 ring-1 ring-fg/6">
             hey, where are you from?
           </p>
           <p className="ml-auto max-w-[80%] rounded-xl rounded-br-sm bg-violet px-2.5 py-1.5 text-[10.5px] text-white">
             not far from you, apparently
           </p>
-          <p className="max-w-[80%] rounded-xl rounded-bl-sm bg-white px-2.5 py-1.5 text-[10.5px] text-ink/75 ring-1 ring-ink/6">
+          <p className="max-w-[80%] rounded-xl rounded-bl-sm bg-surface px-2.5 py-1.5 text-[10.5px] text-fg/75 ring-1 ring-fg/6">
             ha, small world
           </p>
         </div>
-        <div className="mt-3 flex items-center justify-between rounded-lg border border-ink/8 bg-white px-2.5 py-1.5">
-          <span className="text-[10px] text-ink/35">Say something…</span>
-          <ArrowUpRight className="h-3 w-3 text-ink/30" aria-hidden="true" />
+        <div className="mt-3 flex items-center justify-between rounded-lg border border-fg/8 bg-surface px-2.5 py-1.5">
+          <span className="text-[10px] text-fg/35">Say something…</span>
+          <ArrowUpRight className="h-3 w-3 text-fg/30" aria-hidden="true" />
         </div>
       </div>
     </FeatureShell>
@@ -401,8 +401,8 @@ function CameraCard() {
   return (
     <FeatureShell
       icon={ShieldCheck}
-      iconClassName="border-ink/5 bg-white/75 text-violet-dark"
-      className="bg-white"
+      iconClassName="border-fg/5 bg-surface/75 text-violet-dark"
+      className="bg-surface"
     >
       <h3 className="font-display text-[21px] leading-tight font-semibold tracking-[-0.035em]">
         Face to face.
@@ -450,8 +450,8 @@ function CameraCard() {
             className={cn(
               "flex flex-1 items-center justify-center gap-1.5 rounded-full border px-1 py-1 text-[9.5px] font-semibold transition-colors duration-200",
               camOn === option.value
-                ? "border-ink bg-ink text-paper"
-                : "border-ink/10 bg-white/60 text-ink/60 hover:border-ink/25",
+                ? "border-ink bg-ink text-cream dark:border-lime dark:bg-lime dark:text-ink"
+                : "border-fg/10 bg-surface/60 text-fg/60 hover:border-fg/25",
             )}
           >
             <option.icon className="h-3 w-3" aria-hidden="true" />
@@ -467,7 +467,7 @@ function ReportCard() {
   return (
     <FeatureShell
       icon={Flag}
-      iconClassName="border-ink/5 bg-white/75 text-[#C94A30]"
+      iconClassName="border-fg/5 bg-surface/75 text-[#C94A30]"
       className="bg-coral-soft"
     >
       <div className="flex items-start justify-between gap-3">
@@ -479,7 +479,7 @@ function ReportCard() {
             Anyone making you uncomfortable? Report them and move on.
           </p>
         </div>
-        <span className="mt-1 hidden rounded-full border border-white bg-white/70 px-2 py-1 text-[8.5px] font-bold tracking-[0.08em] text-[#C94A30] uppercase sm:block">
+        <span className="mt-1 hidden rounded-full border border-white bg-surface/70 px-2 py-1 text-[8.5px] font-bold tracking-[0.08em] text-[#C94A30] uppercase sm:block">
           18+
         </span>
       </div>
@@ -493,17 +493,17 @@ function ReportCard() {
           <div
             key={line.name}
             className={cn(
-              "flex max-w-[92%] items-center gap-2 rounded-xl border border-white/90 bg-white/85 px-2.5 py-2 shadow-[0_4px_16px_-12px_rgba(90,50,40,0.6)]",
+              "flex max-w-[92%] items-center gap-2 rounded-xl border border-white/90 bg-surface/85 px-2.5 py-2 shadow-[0_4px_16px_-12px_rgba(90,50,40,0.6)]",
               line.tone === "right" && "self-end",
             )}
           >
             <span className="text-[9px] font-bold tracking-[0.02em] text-[#B84A34]">{line.name}</span>
-            <span className="min-w-0 flex-1 truncate text-[10.5px] text-ink/75">{line.text}</span>
+            <span className="min-w-0 flex-1 truncate text-[10.5px] text-fg/75">{line.text}</span>
           </div>
         ))}
-        <div className="mt-1 flex items-center gap-1.5 self-start rounded-md bg-white/55 px-2 py-1">
-          <Globe2 className="h-2.5 w-2.5 text-ink/50" aria-hidden="true" />
-          <span className="text-[8px] font-semibold tracking-[0.08em] text-ink/50 uppercase">
+        <div className="mt-1 flex items-center gap-1.5 self-start rounded-md bg-surface/55 px-2 py-1">
+          <Globe2 className="h-2.5 w-2.5 text-fg/50" aria-hidden="true" />
+          <span className="text-[8px] font-semibold tracking-[0.08em] text-fg/50 uppercase">
             automatic safety screening
           </span>
         </div>

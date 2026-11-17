@@ -35,7 +35,7 @@ export function Hero() {
       <div className="mx-auto grid w-full max-w-[1240px] items-center gap-14 px-5 sm:px-7 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10 lg:px-10">
         <div className="relative z-10 text-center lg:text-left">
           <div
-            className="enter-up inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/60 py-1.5 pr-3.5 pl-1.5 text-[11.5px] font-medium text-ink/75 shadow-[0_4px_18px_-10px_rgba(21,19,27,0.35)] backdrop-blur-md sm:text-[12px]"
+            className="enter-up inline-flex items-center gap-2 rounded-full border border-fg/10 bg-surface/60 py-1.5 pr-3.5 pl-1.5 text-[11.5px] font-medium text-fg/75 shadow-[0_4px_18px_-10px_rgba(21,19,27,0.35)] backdrop-blur-md sm:text-[12px]"
             style={{ "--enter-delay": "60ms" } as CSSProperties}
           >
             <span className="flex items-center gap-1 rounded-full bg-ink px-2 py-1 text-[9px] font-bold tracking-[0.09em] text-lime uppercase">
@@ -43,7 +43,7 @@ export function Hero() {
               free
             </span>
             Pick your distance, meet someone nearby
-            <ArrowUpRight className="h-3.5 w-3.5 text-ink/40" aria-hidden="true" />
+            <ArrowUpRight className="h-3.5 w-3.5 text-fg/40" aria-hidden="true" />
           </div>
 
           <h1
@@ -55,7 +55,7 @@ export function Hero() {
             but{" "}
             <span className="serif-accent relative inline-block text-violet-dark">
               close to home
-              <span className="text-ink">.</span>
+              <span className="text-fg">.</span>
               <svg
                 className="text-coral absolute -bottom-1.5 left-0 h-3 w-full sm:-bottom-2 sm:h-4"
                 viewBox="0 0 300 18"
@@ -101,7 +101,7 @@ export function Hero() {
               href="#how-it-works"
               className={`${secondaryButton} w-full px-6 py-4 text-[15px] sm:w-auto`}
             >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-ink text-paper">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-ink text-cream">
                 <Play className="ml-px h-2.5 w-2.5 fill-current" aria-hidden="true" />
               </span>
               See how it works
@@ -109,7 +109,7 @@ export function Hero() {
           </div>
 
           <div
-            className="enter-up mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] font-medium text-ink/60 sm:text-[12px] lg:justify-start"
+            className="enter-up mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] font-medium text-fg/60 sm:text-[12px] lg:justify-start"
             style={{ "--enter-delay": "400ms" } as CSSProperties}
           >
             {["Free right now", "No account needed", "Works in your phone browser"].map((item) => (
@@ -121,14 +121,14 @@ export function Hero() {
           </div>
 
           <div
-            className="enter-up mt-8 flex flex-col items-center gap-3 border-t border-ink/8 pt-6 sm:flex-row sm:gap-4 lg:justify-start"
+            className="enter-up mt-8 flex flex-col items-center gap-3 border-t border-fg/8 pt-6 sm:flex-row sm:gap-4 lg:justify-start"
             style={{ "--enter-delay": "480ms" } as CSSProperties}
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-lilac text-violet-dark">
               <ShieldCheck className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="text-center sm:text-left">
-              <p className="text-[12.5px] font-semibold text-ink">Adults only, 18+</p>
+              <p className="text-[12.5px] font-semibold text-fg">Adults only, 18+</p>
               <p className="mt-0.5 text-[11.5px] text-muted">
                 Skip or stop at any moment. Video is screened automatically and never recorded.
               </p>

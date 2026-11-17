@@ -58,14 +58,14 @@ export function Benefits() {
             <div className="mt-9 space-y-1">
               {benefits.map((benefit, index) => (
                 <Reveal key={benefit.title} delay={80 + index * 75}>
-                  <div className="group flex gap-4 rounded-2xl p-3.5 transition-colors duration-300 hover:bg-white/55 sm:-mx-1">
+                  <div className="group flex gap-4 rounded-2xl p-3.5 transition-colors duration-300 hover:bg-surface/55 sm:-mx-1">
                     <span
                       className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-105 ${benefit.iconClass}`}
                     >
                       <benefit.icon className="h-[18px] w-[18px]" aria-hidden="true" />
                     </span>
                     <div>
-                      <h3 className="font-display text-[16px] font-semibold tracking-[-0.025em] text-ink">
+                      <h3 className="font-display text-[16px] font-semibold tracking-[-0.025em] text-fg">
                         {benefit.title}
                       </h3>
                       <p className="mt-1 max-w-md text-[13.5px] leading-relaxed text-muted">
@@ -80,7 +80,7 @@ export function Benefits() {
             <Reveal delay={380}>
               <a
                 href="/talk/"
-                className="group mt-6 inline-flex items-center gap-2 pl-3.5 text-[13.5px] font-semibold text-ink transition-colors hover:text-violet-dark sm:pl-2.5"
+                className="group mt-6 inline-flex items-center gap-2 pl-3.5 text-[13.5px] font-semibold text-fg transition-colors hover:text-violet-dark sm:pl-2.5"
               >
                 Start chatting
                 <ArrowUpRight
@@ -102,7 +102,7 @@ export function Benefits() {
             />
 
             <figure className="relative">
-              <div className="relative overflow-hidden rounded-[28px] border border-ink/8 bg-paper-deep shadow-soft sm:rounded-[34px]">
+              <div className="relative overflow-hidden rounded-[28px] border border-fg/8 bg-paper-deep shadow-soft sm:rounded-[34px]">
                 <img
                   src={groupPhotos.bedroom}
                   alt="People laughing together on a video call"
@@ -119,10 +119,10 @@ export function Benefits() {
                     <MapPin className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11.5px] font-semibold text-paper">
+                    <p className="truncate text-[11.5px] font-semibold text-cream">
                       Matched 12 km away
                     </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[9.5px] text-paper/55">
+                    <p className="mt-0.5 flex items-center gap-1 text-[9.5px] text-cream/55">
                       <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden="true" />
                       Say hi, it is that easy
                     </p>
@@ -131,12 +131,12 @@ export function Benefits() {
                 </figcaption>
               </div>
 
-              <div className="animate-float absolute -top-4 -left-3 flex items-center gap-2.5 rounded-2xl border border-white/70 bg-white/90 px-3 py-2.5 shadow-float backdrop-blur-xl sm:-top-6 sm:-left-5">
+              <div className="animate-float absolute -top-4 -left-3 flex items-center gap-2.5 rounded-2xl border border-white/70 bg-surface/90 px-3 py-2.5 shadow-float backdrop-blur-xl sm:-top-6 sm:-left-5">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-lime text-ink">
                   <SkipForward className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <div>
-                  <p className="text-[10.5px] font-semibold text-ink">Skip anytime</p>
+                  <p className="text-[10.5px] font-semibold text-fg">Skip anytime</p>
                   <p className="mt-0.5 text-[9px] text-muted">next person, one tap</p>
                 </div>
               </div>

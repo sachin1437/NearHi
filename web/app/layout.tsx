@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -13,12 +13,16 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#07173D" };
+// Runs before first paint so a saved dark choice never flashes light.
+const THEME_SCRIPT =
+  "try{var t=localStorage.getItem('nh-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);if(t==='dark'){var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content','#120f17')}}}catch(e){}";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#f7f4ed" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="stylesheet" href="/fonts/fonts.css" />
       </head>

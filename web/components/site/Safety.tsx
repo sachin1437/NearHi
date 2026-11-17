@@ -6,10 +6,10 @@ import { cn } from "@/lib/cn";
 import { Eyebrow, Reveal } from "./ui";
 
 const tones = {
-  dark: "bg-ink text-paper border-white/10",
-  white: "bg-paper-warm text-ink border-ink/8",
-  lilac: "bg-lilac text-ink border-ink/6",
-  coral: "bg-coral-soft text-ink border-ink/6",
+  dark: "bg-ink text-cream border-white/10",
+  white: "bg-paper-warm text-fg border-fg/8",
+  lilac: "bg-lilac text-fg border-fg/6",
+  coral: "bg-coral-soft text-fg border-fg/6",
 };
 
 const cards = [
@@ -49,7 +49,7 @@ export function Safety() {
   return (
     <section
       id="safety"
-      className="relative scroll-mt-24 overflow-hidden border-y border-ink/7 bg-paper-warm py-20 sm:py-28 lg:py-32"
+      className="relative scroll-mt-24 overflow-hidden border-y border-fg/7 bg-paper-warm py-20 sm:py-28 lg:py-32"
     >
       <div
         className="pointer-events-none absolute top-0 right-0 h-72 w-72 rounded-full bg-lilac/70 blur-3xl"
@@ -67,7 +67,7 @@ export function Safety() {
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border border-ink/8 bg-white/60 px-5 py-4 backdrop-blur-sm">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border border-fg/8 bg-surface/60 px-5 py-4 backdrop-blur-sm">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-display text-[28px] leading-none font-semibold tracking-[-0.04em]">
@@ -77,7 +77,7 @@ export function Safety() {
                 </div>
                 <p className="mt-1 text-[10.5px] font-medium text-muted">adults only</p>
               </div>
-              <div className="h-9 w-px bg-ink/10" aria-hidden="true" />
+              <div className="h-9 w-px bg-fg/10" aria-hidden="true" />
               <div>
                 <span className="font-display text-[28px] leading-none font-semibold tracking-[-0.04em]">0</span>
                 <p className="mt-1 text-[10.5px] font-medium text-muted">calls recorded</p>
@@ -101,12 +101,12 @@ export function Safety() {
               <Lock className="h-8 w-8 shrink-0 text-lime/80" aria-hidden="true" strokeWidth={1.4} />
               <div className="relative flex flex-1 flex-col">
                 <p className="text-[11px] font-semibold tracking-[0.16em] text-lime uppercase">Privacy</p>
-                <p className="mt-4 flex-1 font-display text-[20px] leading-[1.35] font-medium tracking-[-0.025em] text-paper sm:text-[24px]">
+                <p className="mt-4 flex-1 font-display text-[20px] leading-[1.35] font-medium tracking-[-0.025em] text-cream sm:text-[24px]">
                   We don&apos;t record your video or audio. A safety screen looks at a still image every few
                   seconds and throws it away.
                 </p>
-                <p className="mt-6 flex items-start gap-2 text-[11.5px] leading-relaxed text-paper/55">
-                  <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-paper/40" aria-hidden="true" />
+                <p className="mt-6 flex items-start gap-2 text-[11.5px] leading-relaxed text-cream/55">
+                  <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cream/40" aria-hidden="true" />
                   Nobody watches calls live, so the checks are a help, not a guarantee. Don&apos;t share
                   personal details with people you just met.
                 </p>
@@ -122,7 +122,7 @@ export function Safety() {
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/35 to-transparent" />
-                <span className="absolute bottom-2.5 left-2.5 rounded-full border border-white/20 bg-ink/50 px-2 py-1 text-[8.5px] font-semibold text-paper backdrop-blur-md">
+                <span className="absolute bottom-2.5 left-2.5 rounded-full border border-white/20 bg-ink/50 px-2 py-1 text-[8.5px] font-semibold text-cream backdrop-blur-md">
                   never recorded
                 </span>
               </div>
@@ -141,20 +141,20 @@ export function Safety() {
                   tones[item.tone],
                 )}
               >
-                <span className="grid h-9 w-9 place-items-center rounded-xl border border-ink/5 bg-white/75 text-violet-dark">
+                <span className="grid h-9 w-9 place-items-center rounded-xl border border-fg/5 bg-surface/75 text-violet-dark">
                   <item.icon className="h-[18px] w-[18px]" aria-hidden="true" />
                 </span>
                 <h3 className="mt-4 font-display text-[17px] leading-tight font-semibold tracking-[-0.03em]">
                   {item.title}
                 </h3>
-                <p className="mt-2 flex-1 text-[13px] leading-[1.65] text-ink/70">{item.body}</p>
+                <p className="mt-2 flex-1 text-[13px] leading-[1.65] text-fg/70">{item.body}</p>
               </article>
             </Reveal>
           ))}
 
           <Reveal delay={150} className="lg:col-span-2">
-            <div className="flex h-full flex-col justify-between rounded-[26px] border border-dashed border-ink/15 bg-white/35 p-6">
-              <p className="font-serif text-[26px] leading-tight text-ink/80">
+            <div className="flex h-full flex-col justify-between rounded-[26px] border border-dashed border-fg/15 bg-surface/35 p-6">
+              <p className="font-serif text-[26px] leading-tight text-fg/80">
                 “Say hi to someone who lives near you.”
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -163,7 +163,7 @@ export function Safety() {
                 </p>
                 <a
                   href="/talk/"
-                  className="group inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink hover:text-violet-dark"
+                  className="group inline-flex items-center gap-1.5 text-[12px] font-semibold text-fg hover:text-violet-dark"
                 >
                   Start chatting
                   <ArrowUpRight

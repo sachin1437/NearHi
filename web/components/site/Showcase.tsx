@@ -79,7 +79,7 @@ export function Showcase() {
   return (
     <section
       id="how-it-works"
-      className="noise relative scroll-mt-20 overflow-hidden bg-ink py-20 text-paper sm:py-28 lg:py-32"
+      className="noise relative scroll-mt-20 overflow-hidden bg-ink py-20 text-cream sm:py-28 lg:py-32"
     >
       <div
         className="pointer-events-none absolute -top-40 left-1/4 h-[440px] w-[440px] rounded-full bg-violet/25 blur-[110px]"
@@ -98,16 +98,16 @@ export function Showcase() {
         <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <Reveal className="max-w-2xl">
             <Eyebrow tone="dark">How it works</Eyebrow>
-            <h2 className="h-display mt-4 text-[clamp(2.4rem,6.2vw,4rem)] text-balance text-paper">
+            <h2 className="h-display mt-4 text-[clamp(2.4rem,6.2vw,4rem)] text-balance text-cream">
               Pick a distance.{" "}
               <span className="serif-accent text-lime">Say hi.</span>
             </h2>
           </Reveal>
           <Reveal delay={110} className="max-w-sm">
-            <p className="text-[14.5px] leading-relaxed text-paper/55">
+            <p className="text-[14.5px] leading-relaxed text-cream/55">
               This is how a chat works, from picking your distance to your first hello. The buttons below are a preview, try the tabs.
             </p>
-            <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] text-paper/35 uppercase">
+            <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] text-cream/35 uppercase">
               <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden="true" />
               Illustrative preview · stock photos
             </p>
@@ -138,12 +138,12 @@ export function Showcase() {
                   className={cn(
                     "flex shrink-0 snap-start items-center gap-2 rounded-xl px-3.5 py-2.5 text-[12.5px] font-semibold whitespace-nowrap transition-all duration-300 sm:px-4 sm:text-[13px]",
                     selected
-                      ? "bg-paper text-ink shadow-[0_6px_20px_-8px_rgba(0,0,0,0.55)]"
-                      : "text-paper/60 hover:bg-white/8 hover:text-paper",
+                      ? "bg-paper text-fg shadow-[0_6px_20px_-8px_rgba(0,0,0,0.55)]"
+                      : "text-cream/60 hover:bg-white/8 hover:text-cream",
                   )}
                 >
                   <tab.icon
-                    className={cn("h-4 w-4", selected ? "text-violet-dark" : "text-paper/45")}
+                    className={cn("h-4 w-4", selected ? "text-violet-dark" : "text-cream/45")}
                     aria-hidden="true"
                   />
                   {tab.label}
@@ -175,19 +175,19 @@ export function Showcase() {
                     <span className="h-2 w-2 rounded-full bg-[#7BD88F]" />
                   </div>
                   <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-white/8 bg-black/20 px-2.5 py-1">
-                    <Lock className="h-2.5 w-2.5 shrink-0 text-paper/40" />
-                    <span className="truncate text-[9.5px] text-paper/45">
+                    <Lock className="h-2.5 w-2.5 shrink-0 text-cream/40" />
+                    <span className="truncate text-[9.5px] text-cream/45">
                       nearhi.in/talk
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <Volume2 className="h-3 w-3 text-paper/30" />
-                    <MoreHorizontal className="h-3.5 w-3.5 text-paper/30" />
+                    <Volume2 className="h-3 w-3 text-cream/30" />
+                    <MoreHorizontal className="h-3.5 w-3.5 text-cream/30" />
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-[18px] bg-paper sm:rounded-[22px]">
-                  <div className="flex min-h-[420px] text-ink sm:min-h-[452px]">
+                <div className="theme-light overflow-hidden rounded-[18px] bg-paper sm:rounded-[22px]">
+                  <div className="flex min-h-[420px] text-fg sm:min-h-[452px]">
                     <DemoSidebar current={current} />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <DemoTopBar title={current.title} />
@@ -211,10 +211,10 @@ export function Showcase() {
               <div className="flex h-full gap-3 rounded-2xl border border-white/8 bg-white/[0.035] p-4">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-lime" aria-hidden="true" />
                 <div>
-                  <p className="font-display text-[15px] font-semibold tracking-[-0.02em] text-paper">
+                  <p className="font-display text-[15px] font-semibold tracking-[-0.02em] text-cream">
                     {current.heading}
                   </p>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-paper/50">
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-cream/50">
                     {current.description}
                   </p>
                 </div>
@@ -227,7 +227,7 @@ export function Showcase() {
                     <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lime/15">
                       <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden="true" />
                     </span>
-                    <span className="text-[12px] font-medium text-paper/70">{feature}</span>
+                    <span className="text-[12px] font-medium text-cream/70">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -248,7 +248,7 @@ function DemoSidebar({ current }: { current: (typeof tabs)[number] }) {
 
   return (
     <aside
-      className="hidden w-[170px] shrink-0 flex-col border-r border-ink/8 bg-paper-warm p-3 md:flex"
+      className="hidden w-[170px] shrink-0 flex-col border-r border-fg/8 bg-paper-warm p-3 md:flex"
       aria-hidden="true"
     >
       <div className="flex items-center gap-2 px-1.5 py-1">
@@ -268,7 +268,7 @@ function DemoSidebar({ current }: { current: (typeof tabs)[number] }) {
               key={item.label}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold",
-                active ? "bg-ink text-paper" : "text-ink/55",
+                active ? "bg-ink text-cream" : "text-fg/55",
               )}
             >
               <item.icon className="h-3.5 w-3.5" />
@@ -280,7 +280,7 @@ function DemoSidebar({ current }: { current: (typeof tabs)[number] }) {
       </div>
 
       <div className="mt-5 px-2">
-        <p className="text-[8px] font-bold tracking-[0.14em] text-ink/35 uppercase">your settings</p>
+        <p className="text-[8px] font-bold tracking-[0.14em] text-fg/35 uppercase">your settings</p>
         <div className="mt-2 space-y-2">
           {[
             { label: "Distance: 50 km", icon: MapPin },
@@ -291,19 +291,19 @@ function DemoSidebar({ current }: { current: (typeof tabs)[number] }) {
               <span className="grid h-5 w-5 place-items-center rounded-full bg-lilac text-violet-dark">
                 <row.icon className="h-2.5 w-2.5" />
               </span>
-              <span className="truncate text-[9.5px] font-medium text-ink/55">{row.label}</span>
+              <span className="truncate text-[9.5px] font-medium text-fg/55">{row.label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-auto flex items-center gap-2 rounded-xl border border-ink/7 bg-white/60 p-1.5">
+      <div className="mt-auto flex items-center gap-2 rounded-xl border border-fg/7 bg-surface/60 p-1.5">
         <img src={people.theo.avatar} alt="" className="h-6 w-6 rounded-full object-cover" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[9.5px] font-semibold text-ink">you</p>
-          <p className="text-[8px] text-ink/40">no account needed</p>
+          <p className="truncate text-[9.5px] font-semibold text-fg">you</p>
+          <p className="text-[8px] text-fg/40">no account needed</p>
         </div>
-        <Settings className="h-3 w-3 text-ink/35" />
+        <Settings className="h-3 w-3 text-fg/35" />
       </div>
     </aside>
   );
@@ -312,7 +312,7 @@ function DemoSidebar({ current }: { current: (typeof tabs)[number] }) {
 function DemoTopBar({ title }: { title: string }) {
   return (
     <div
-      className="flex items-center justify-between gap-2 border-b border-ink/7 px-3 py-2.5 sm:px-4"
+      className="flex items-center justify-between gap-2 border-b border-fg/7 px-3 py-2.5 sm:px-4"
       aria-hidden="true"
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -322,13 +322,13 @@ function DemoTopBar({ title }: { title: string }) {
         <p className="truncate text-[11px] font-semibold sm:text-[12px]">{title}</p>
       </div>
       <div className="flex items-center gap-2">
-        <span className="hidden items-center gap-1 rounded-full border border-ink/10 bg-white/70 px-2.5 py-1.5 text-[8.5px] font-semibold text-ink/60 sm:inline-flex sm:text-[9.5px]">
+        <span className="hidden items-center gap-1 rounded-full border border-fg/10 bg-surface/70 px-2.5 py-1.5 text-[8.5px] font-semibold text-fg/60 sm:inline-flex sm:text-[9.5px]">
           <Lock className="h-2.5 w-2.5" /> 18+
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-1.5 text-[8.5px] font-semibold text-paper sm:text-[9.5px]">
+        <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-1.5 text-[8.5px] font-semibold text-cream sm:text-[9.5px]">
           <SkipForward className="h-2.5 w-2.5" /> Skip
         </span>
-        <MoreHorizontal className="h-3.5 w-3.5 text-ink/35" />
+        <MoreHorizontal className="h-3.5 w-3.5 text-fg/35" />
       </div>
     </div>
   );
@@ -355,12 +355,12 @@ const thread = {
 function DemoChat({ active }: { active: TabKey }) {
   return (
     <aside
-      className="hidden w-[190px] shrink-0 flex-col rounded-xl border border-ink/7 bg-white/50 p-2.5 lg:flex"
+      className="hidden w-[190px] shrink-0 flex-col rounded-xl border border-fg/7 bg-surface/50 p-2.5 lg:flex"
       aria-hidden="true"
     >
       <div className="flex items-center justify-between px-0.5">
-        <p className="text-[9.5px] font-bold tracking-[0.09em] text-ink/45 uppercase">text chat</p>
-        <MessageCircle className="h-3 w-3 text-ink/30" />
+        <p className="text-[9.5px] font-bold tracking-[0.09em] text-fg/45 uppercase">text chat</p>
+        <MessageCircle className="h-3 w-3 text-fg/30" />
       </div>
       <div className="mt-2.5 flex-1 space-y-2.5">
         {thread[active].map((message) => (
@@ -372,17 +372,17 @@ function DemoChat({ active }: { active: TabKey }) {
             />
             <div className="min-w-0">
               <div className="flex items-baseline gap-1">
-                <span className="text-[8px] font-bold text-ink/55">{message.who}</span>
-                <span className="text-[7px] text-ink/30">{message.time}</span>
+                <span className="text-[8px] font-bold text-fg/55">{message.who}</span>
+                <span className="text-[7px] text-fg/30">{message.time}</span>
               </div>
-              <p className="mt-0.5 text-[9px] leading-snug text-ink/70">{message.text}</p>
+              <p className="mt-0.5 text-[9px] leading-snug text-fg/70">{message.text}</p>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-2 flex items-center gap-1 rounded-lg border border-ink/8 bg-white px-2 py-1.5">
-        <span className="flex-1 text-[8.5px] text-ink/35">Say something…</span>
-        <Send className="h-3 w-3 text-ink/30" />
+      <div className="mt-2 flex items-center gap-1 rounded-lg border border-fg/8 bg-surface px-2 py-1.5">
+        <span className="flex-1 text-[8.5px] text-fg/35">Say something…</span>
+        <Send className="h-3 w-3 text-fg/30" />
       </div>
     </aside>
   );
@@ -437,7 +437,7 @@ function PersonTile({
 function DemoDock() {
   return (
     <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-ink px-2.5 py-2" aria-hidden="true">
-      <span className="hidden items-center gap-1.5 text-[8.5px] font-medium text-paper/45 sm:flex">
+      <span className="hidden items-center gap-1.5 text-[8.5px] font-medium text-cream/45 sm:flex">
         <Lock className="h-2.5 w-2.5" /> not recorded
       </span>
       <div className="flex flex-1 items-center justify-center gap-1.5">
@@ -445,7 +445,7 @@ function DemoDock() {
           <span
             key={index}
             className={cn(
-              "grid h-7 w-7 place-items-center rounded-full bg-white/8 text-paper/80",
+              "grid h-7 w-7 place-items-center rounded-full bg-white/8 text-cream/80",
               index === 2 && "bg-lime text-ink",
             )}
           >
@@ -456,7 +456,7 @@ function DemoDock() {
           <PhoneOff className="h-3 w-3" />
         </span>
       </div>
-      <span className="hidden text-[8px] font-medium text-paper/35 sm:block">0:27</span>
+      <span className="hidden text-[8px] font-medium text-cream/35 sm:block">0:27</span>
     </div>
   );
 }
@@ -473,12 +473,12 @@ function VideoPanel() {
         />
         <PersonTile person={{ ...people.theo, name: "You" }} note="camera on" className="hidden sm:block" />
         <div className="relative hidden overflow-hidden rounded-xl bg-lilac p-2.5 ring-1 ring-black/5 sm:flex sm:flex-col sm:justify-between">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-white/80 text-violet-dark">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-surface/80 text-violet-dark">
             <MapPin className="h-3 w-3" />
           </span>
           <div>
             <p className="font-display text-[15px] leading-none font-semibold tracking-[-0.03em]">12 km</p>
-            <p className="mt-1 text-[8px] leading-snug text-ink/50">inside your 50 km radius</p>
+            <p className="mt-1 text-[8px] leading-snug text-fg/50">inside your 50 km radius</p>
           </div>
         </div>
         <PersonTile
@@ -487,11 +487,11 @@ function VideoPanel() {
           className="col-span-2 sm:hidden"
         />
       </div>
-      <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/65 px-2.5 py-1.5 ring-1 ring-ink/6">
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-surface/65 px-2.5 py-1.5 ring-1 ring-fg/6">
         <span className="shrink-0 rounded bg-lime px-1 py-0.5 text-[6.5px] font-bold tracking-[0.08em] text-ink uppercase">
           chat
         </span>
-        <p className="truncate text-[8.5px] text-ink/60">Stranger: hey! where are you from?</p>
+        <p className="truncate text-[8.5px] text-fg/60">Stranger: hey! where are you from?</p>
         <Waveform tone="dark" className="ml-auto hidden h-2.5 sm:flex" />
       </div>
       <DemoDock />
@@ -508,7 +508,7 @@ function TextPanel() {
           <span className="rounded bg-ink px-1.5 py-1 text-[7px] font-bold tracking-[0.09em] text-lime uppercase">
             text chat
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-white/70 px-2 py-1 text-[8px] font-semibold text-ink/55">
+          <span className="flex items-center gap-1 rounded-full bg-surface/70 px-2 py-1 text-[8px] font-semibold text-fg/55">
             <span className="h-1 w-1 rounded-full bg-violet" /> 12 km away
           </span>
         </div>
@@ -525,20 +525,20 @@ function TextPanel() {
                 "max-w-[78%] rounded-xl px-3 py-2 text-[10.5px] leading-snug sm:text-[11.5px]",
                 m.me
                   ? "ml-auto rounded-br-sm bg-violet text-white"
-                  : "rounded-bl-sm bg-white text-ink/75 ring-1 ring-ink/6",
+                  : "rounded-bl-sm bg-surface text-fg/75 ring-1 ring-fg/6",
               )}
             >
               {m.text}
             </p>
           ))}
         </div>
-        <div className="relative flex items-center justify-between rounded-lg border border-ink/8 bg-white px-2.5 py-2">
-          <span className="text-[9px] text-ink/35">Say something…</span>
+        <div className="relative flex items-center justify-between rounded-lg border border-fg/8 bg-surface px-2.5 py-2">
+          <span className="text-[9px] text-fg/35">Say something…</span>
           <Send className="h-3 w-3 text-violet-dark" />
         </div>
       </div>
-      <div className="flex items-center justify-between rounded-lg bg-ink px-2.5 py-2 text-paper">
-        <span className="flex items-center gap-1.5 text-[8px] font-medium text-paper/55">
+      <div className="flex items-center justify-between rounded-lg bg-ink px-2.5 py-2 text-cream">
+        <span className="flex items-center gap-1.5 text-[8px] font-medium text-cream/55">
           <Lock className="h-3 w-3 text-lime" /> messages are screened automatically
         </span>
         <span className="rounded bg-lime px-1.5 py-0.5 text-[6.5px] font-bold tracking-[0.06em] text-ink uppercase">
@@ -554,7 +554,7 @@ const radiusOptions = ["10 km", "25 km", "50 km", "100 km", "Anywhere", "Custom�
 function RadiusPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="relative flex flex-1 flex-col overflow-hidden rounded-xl bg-ink px-3 py-4 text-paper sm:p-4">
+      <div className="relative flex flex-1 flex-col overflow-hidden rounded-xl bg-ink px-3 py-4 text-cream sm:p-4">
         <div
           className="absolute inset-0 opacity-40"
           style={{
@@ -593,7 +593,7 @@ function RadiusPanel() {
               key={option}
               className={cn(
                 "rounded-full px-2.5 py-1 text-[8.5px] font-semibold",
-                option === "50 km" ? "bg-lime text-ink" : "bg-white/8 text-paper/60",
+                option === "50 km" ? "bg-lime text-ink" : "bg-white/8 text-cream/60",
               )}
             >
               {option}
@@ -601,12 +601,12 @@ function RadiusPanel() {
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-between rounded-lg bg-white/70 px-2.5 py-2 ring-1 ring-ink/6">
+      <div className="flex items-center justify-between rounded-lg bg-surface/70 px-2.5 py-2 ring-1 ring-fg/6">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-lilac text-violet-dark">
             <Sparkles className="h-2.5 w-2.5" />
           </span>
-          <p className="truncate text-[8.5px] font-medium text-ink/60">
+          <p className="truncate text-[8.5px] font-medium text-fg/60">
             Matches need your radius and theirs to overlap
           </p>
         </div>
