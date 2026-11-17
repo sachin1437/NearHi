@@ -5,6 +5,7 @@ import math
 import os
 import re
 import secrets
+import sys
 import time
 import uuid
 from typing import Optional
@@ -971,6 +972,12 @@ async def admin_dismiss(target: Target):
 async def talk_redirect():
     # relative redirect, so it keeps whatever scheme and host the visitor used
     return RedirectResponse("/talk/")
+
+
+# Accounts and rooms live in their own files. Random 1-on-1 chat above does not use them.
+import rooms  # noqa: E402
+
+rooms.install(app, sys.modules[__name__])
 
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

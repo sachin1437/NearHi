@@ -86,6 +86,7 @@ export const navLinks = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Why NearHi", href: "#why" },
   { label: "Safety", href: "#safety" },
+  { label: "Rooms", href: "/rooms/" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -94,7 +95,7 @@ export const facts = [
   { name: "Text chat", className: "font-display text-[19px] font-extrabold tracking-[-0.03em]" },
   { name: "PICK YOUR RADIUS", className: "font-display text-[17px] font-medium tracking-[0.28em]" },
   { name: "Skip anytime", className: "font-sans text-[17px] font-bold italic tracking-[-0.03em]" },
-  { name: "NO ACCOUNT", className: "font-sans text-[14px] font-bold tracking-[0.08em]" },
+  { name: "NO SIGN-UP TO CHAT", className: "font-sans text-[14px] font-bold tracking-[0.08em]" },
   { name: "Nothing recorded", className: "font-serif text-[21px] italic" },
   { name: "Adults only", className: "font-display text-[19px] font-bold tracking-[-0.05em]" },
   { name: "In your browser", className: "font-sans text-[17px] font-bold italic tracking-[-0.03em]" },

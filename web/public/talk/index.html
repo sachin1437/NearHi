@@ -68,7 +68,6 @@
   .btn-ghost:hover { background: rgba(255,255,255,.18); }
   .btn-sm { font-size: 13px; padding: 10px 20px; }
   .btn:disabled { opacity: 0; pointer-events: none; }
-  #skipBtn:disabled { display: none; }
 
   .intro { flex: 1; display: flex; flex-direction: column; }
   .intro-title { font-weight: 700; font-size: clamp(32px, 5.4vw, 52px); line-height: 1; letter-spacing: -0.045em; margin: 6px 0 10px; text-wrap: balance; }
@@ -112,7 +111,7 @@
   .video-frame { position: absolute; overflow: hidden; background: var(--ink); user-select: none; }
   .video-frame video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
   .video-frame.big { inset: 0; z-index: 1; border-radius: 22px; }
-  .video-frame.pip { width: clamp(96px, 28%, 190px); aspect-ratio: 4 / 3; right: 14px; bottom: 14px; z-index: 2; border: 2px solid var(--lime); border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: grab; touch-action: none; }
+  .video-frame.pip { width: clamp(96px, 28%, 190px); aspect-ratio: 4 / 3; right: 14px; bottom: 86px; z-index: 2; border: 2px solid var(--lime); border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: grab; touch-action: none; }
   .video-frame.pip:active { cursor: grabbing; }
   .video-label { position: absolute; left: 10px; bottom: 9px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--lime); padding: 3px 10px; border-radius: 999px; z-index: 3; pointer-events: none; }
 
@@ -130,11 +129,27 @@
   .overlay-hint { max-width: 32ch; margin: 0; padding: 0 16px; text-align: center; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.7); }
   .overlay-hint:empty { display: none; }
 
-  .dock { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px 10px 16px; background: var(--ink); border-radius: 18px; }
-  .dock-note { font-size: 12px; color: rgba(247,244,237,.55); }
-  .dock-btns { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  #stopBtn { background: var(--coral); color: #fff; }
-  #stopBtn:hover { background: #ee4a4a; }
+  .dock { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 999px; background: rgba(21,19,27,.68); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); transition: opacity .25s ease; }
+  .dbtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 52px; height: 52px; padding: 0; border-radius: 999px; background: rgba(255,255,255,.14); color: #fff; font-size: 15px; font-weight: 600; }
+  .dbtn:hover { background: rgba(255,255,255,.24); }
+  .dbtn .ic { width: 22px; height: 22px; }
+  .dbtn .off { display: none; }
+  .dbtn[aria-pressed="true"] .on { display: none; }
+  .dbtn[aria-pressed="true"] .off { display: block; }
+  #micBtn[aria-pressed="true"], #camBtn[aria-pressed="true"] { background: var(--coral); }
+  .dbtn-skip { padding: 0 22px 0 18px; background: var(--lime); color: var(--ink); }
+  .dbtn-skip:hover { background: var(--lime-deep); }
+  .dbtn-stop { padding: 0 22px 0 18px; background: var(--coral); color: #fff; }
+  .dbtn-stop:hover { background: #ee4a4a; }
+  .dock .btn:disabled { opacity: .35; pointer-events: none; }
+  .call-stage.ui-hidden .dock { opacity: 0; pointer-events: none; }
+  .call-stage.ui-hidden { cursor: none; }
+  .call-stage:fullscreen, .call-stage.is-fs { max-height: none; aspect-ratio: auto; width: 100vw; height: 100vh; border-radius: 0; }
+  .call-stage.is-fs { position: fixed; inset: 0; z-index: 1000; }
+  .call-stage:fullscreen .video-frame.big, .call-stage.is-fs .video-frame.big { border-radius: 0; }
+  .video-frame.big .video-label { top: 12px; bottom: auto; left: 12px; }
+  .video-frame.cam-off video { visibility: hidden; }
+  .video-frame.cam-off::after { content: "Camera off"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.7); background: var(--ink); }
 
   .chatbox { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
   .chat-head { padding: 14px 16px 6px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -165,7 +180,11 @@
     .call-stage { aspect-ratio: 4 / 5; border-radius: 18px; }
     .video-frame.big { border-radius: 18px; }
     .rings { width: 150px; height: 150px; }
-    .dock { flex-wrap: wrap; }
+    .dock { gap: 6px; padding: 6px; bottom: 10px; }
+    .dbtn { min-width: 44px; height: 44px; }
+    .dbtn .lbl { display: none; }
+    .dbtn-skip, .dbtn-stop { padding: 0; }
+    .dbtn .ic { width: 20px; height: 20px; }
   }
 </style>
 <script src="/hit.js" defer></script>
@@ -181,6 +200,7 @@
       nearhi
     </a>
     <a class="side-link" href="/">Home</a>
+    <a class="side-link" href="/rooms/">Rooms</a>
     <a class="side-link" href="/terms/">Terms</a>
     <a class="side-link" href="/privacy/">Privacy</a>
     <p class="side-label">Your settings</p>
@@ -272,13 +292,22 @@
             <video id="localVideo" autoplay muted playsinline></video>
             <span class="video-label">You</span>
           </div>
-        </div>
-        <div class="dock">
-          <span class="dock-note">Drag your small view to move it</span>
-          <div class="dock-btns">
-            <button id="reportBtn" class="btn btn-ghost btn-sm" disabled>Report</button>
-            <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
-            <button id="stopBtn" class="btn btn-ghost btn-sm" disabled>Stop</button>
+          <div class="dock" id="dock">
+            <button id="micBtn" class="btn dbtn" type="button" aria-pressed="false" aria-label="Mute microphone" title="Microphone" disabled>
+              <svg class="ic on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              <svg class="ic off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M9 9v2a3 3 0 0 0 5 2.2M15 9.3V6a3 3 0 0 0-5.9-.8M5 11a7 7 0 0 0 11 5.7M19 11a7 7 0 0 1-.6 2.8M12 18v3"/></svg>
+            </button>
+            <button id="camBtn" class="btn dbtn" type="button" aria-pressed="false" aria-label="Turn camera off" title="Camera" disabled>
+              <svg class="ic on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="M16 10l6-3v10l-6-3"/></svg>
+              <svg class="ic off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M7 6h6a3 3 0 0 1 3 3v3.5M16 10l6-3v10l-4.5-2.2M13 18H5a3 3 0 0 1-3-3V9a3 3 0 0 1 1-2.2"/></svg>
+            </button>
+            <button id="skipBtn" class="btn dbtn dbtn-skip" type="button" aria-label="Skip to someone new" title="Skip" disabled><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg><span class="lbl">Skip</span></button>
+            <button id="reportBtn" class="btn dbtn" type="button" aria-label="Report this person" title="Report" disabled><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4M4 4h13l-2 4 2 4H4"/></svg></button>
+            <button id="fsBtn" class="btn dbtn" type="button" aria-pressed="false" aria-label="Full screen" title="Full screen">
+              <svg class="ic on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+              <svg class="ic off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+            </button>
+            <button id="stopBtn" class="btn dbtn dbtn-stop" type="button" aria-label="Stop and leave" title="Stop" disabled><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span class="lbl">Stop</span></button>
           </div>
         </div>
       </div>
@@ -1048,6 +1077,84 @@ function onPipPointerUp() {
   document.getElementById('radiusCustom').addEventListener('input', sync);
   setInterval(sync, 400); // catches the page widening the radius itself
   sync();
+})();
+</script>
+<script>
+// Mic and camera switches. They only flip track.enabled on the stream the main script already opened.
+(function () {
+  var video = document.getElementById('localVideo');
+  var frame = document.getElementById('localFrame');
+  var mic = document.getElementById('micBtn');
+  var cam = document.getElementById('camBtn');
+  var micOff = false, camOff = false, hadStream = false;
+  function setBtn(btn, off, onLabel, offLabel) {
+    btn.setAttribute('aria-pressed', String(off));
+    btn.setAttribute('aria-label', off ? offLabel : onLabel);
+  }
+  function apply() {
+    var stream = video.srcObject;
+    if (!stream) {
+      if (hadStream) { micOff = false; camOff = false; hadStream = false; }
+      mic.disabled = cam.disabled = true;
+      setBtn(mic, false, 'Mute microphone', 'Unmute microphone');
+      setBtn(cam, false, 'Turn camera off', 'Turn camera on');
+      frame.classList.remove('cam-off');
+      return;
+    }
+    hadStream = true;
+    stream.getAudioTracks().forEach(function (t) { t.enabled = !micOff; });
+    stream.getVideoTracks().forEach(function (t) { t.enabled = !camOff; });
+    mic.disabled = stream.getAudioTracks().length === 0;
+    cam.disabled = stream.getVideoTracks().length === 0;
+    setBtn(mic, micOff, 'Mute microphone', 'Unmute microphone');
+    setBtn(cam, camOff, 'Turn camera off', 'Turn camera on');
+    frame.classList.toggle('cam-off', camOff);
+  }
+  mic.addEventListener('click', function () { micOff = !micOff; apply(); });
+  cam.addEventListener('click', function () { camOff = !camOff; apply(); });
+  setInterval(apply, 500); // keeps the choice across skips and new streams
+  apply();
+})();
+</script>
+<script>
+// Full screen for the call stage. The dock lives inside the stage, so every control goes with it.
+(function () {
+  var stage = document.getElementById('callStage');
+  var btn = document.getElementById('fsBtn');
+  var timer = null;
+  function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement) || stage.classList.contains('is-fs'); }
+  function sync() {
+    var on = isFs();
+    btn.setAttribute('aria-pressed', String(on));
+    btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+    btn.title = on ? 'Exit full screen' : 'Full screen';
+    if (!on) { stage.classList.remove('ui-hidden'); clearTimeout(timer); }
+    else poke();
+  }
+  function poke() {
+    stage.classList.remove('ui-hidden');
+    clearTimeout(timer);
+    if (isFs()) timer = setTimeout(function () { stage.classList.add('ui-hidden'); }, 3000);
+  }
+  function enter() {
+    var req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    if (req) { try { var r = req.call(stage); if (r && r.catch) r.catch(function () { stage.classList.add('is-fs'); sync(); }); return; } catch (e) {} }
+    stage.classList.add('is-fs'); // iOS Safari: fill the window instead
+    sync();
+  }
+  function leave() {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+    stage.classList.remove('is-fs');
+    sync();
+  }
+  btn.addEventListener('click', function () { isFs() ? leave() : enter(); });
+  document.addEventListener('fullscreenchange', sync);
+  document.addEventListener('webkitfullscreenchange', sync);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && stage.classList.contains('is-fs')) leave(); });
+  ['mousemove', 'touchstart', 'pointerdown'].forEach(function (n) { stage.addEventListener(n, poke, { passive: true }); });
+  // Leaving the call ends full screen too.
+  setInterval(function () { if (!document.body.classList.contains('active') && isFs()) leave(); }, 700);
 })();
 </script>
 </body>
