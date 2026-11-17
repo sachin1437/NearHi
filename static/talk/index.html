@@ -3,153 +3,169 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NearHi</title>
+<title>NearHi: start talking</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://nearhi.in/talk/">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#07173D">
+<meta name="theme-color" content="#f7f4ed">
+<script>try{var t=localStorage.getItem('nh-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
+  @font-face { font-family: "Instrument Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/instrument-serif-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/instrument-serif-latin-400-italic.woff2) format("woff2"); }
   :root {
-    --navy: #07173D;
-    --stage: #040E27;
-    --panel: #0E2358;
-    --panel-line: #24407F;
-    --paper: #F3F7FF;
-    --brand: #0466FD;      /* logo blue */
-    --brand-dark: #0555D6;
-    --ring: #3B87FF;       /* brighter blue for lines and focus on dark */
-    --muted: #9DB4E0;
+    --paper: #f7f4ed; --paper-deep: #efeade; --card: #fbf8f1;
+    --ink: #15131b; --ink-soft: #24202c; --muted: #6a6474; --line: #e3ddd1;
+    --lilac: #e9e2ff; --violet: #6c4bf4; --violet-dark: #5534d8;
+    --lime: #ddf77a; --lime-deep: #c8e75c; --coral: #ff5d5d; --text: #15131b; --field: #ffffff;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #120f17; --paper-deep: #201c2a; --card: #181420; --ink: #1d1927; --ink-soft: #e2ddd2;
+    --muted: #a8a2b4; --line: #2c2735; --lilac: #2b2352; --violet: #8a6dff; --violet-dark: #b5a2ff;
+    --text: #f3efe6; --field: #1f1b29;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--navy) url(/topo-tile-dark.webp) repeat;
-    background-size: 640px 640px;
-    color: var(--paper);
-    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-optical-sizing: auto;
-    min-height: 100vh;
-  }
-  .app { max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }
+  body { background: var(--paper); color: var(--text); font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: 0; opacity: .55; pointer-events: none; background: radial-gradient(60% 45% at 30% 0%, rgba(108,75,244,.38), transparent 70%), radial-gradient(40% 35% at 90% 100%, rgba(221,247,122,.08), transparent 70%); }
+  ::selection { background: var(--lime); color: var(--ink); }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; color: var(--violet); }
 
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 40px; }
-  .wordmark { display: flex; align-items: center; gap: 12px; font-size: 29px; font-weight: 700; letter-spacing: -0.025em; text-decoration: none; color: inherit; }
-  .wordmark .badge { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 11px; background: var(--brand); }
-  .wordmark .badge svg { width: 64%; height: auto; fill: #fff; }
-  .topbar-right { display: flex; align-items: center; gap: 16px; }
-  .status { font-size: 13px; color: var(--muted); }
+  .app { position: relative; z-index: 1; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; background: var(--paper); }
 
-  .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 500; border-radius: 999px; transition: transform .15s ease, background .15s ease, opacity .2s ease; }
+  .side { display: none; flex: none; width: 240px; position: sticky; top: 0; height: 100vh; align-self: flex-start; flex-direction: column; gap: 6px; padding: 18px 14px; background: var(--card); border-right: 1px solid var(--line); }
+  .wordmark { display: flex; align-items: center; gap: 9px; padding: 2px 6px 18px; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; color: var(--text); }
+  .wordmark .badge { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; background: var(--ink); }
+  .wordmark .badge svg { width: 58%; height: auto; fill: var(--lime); }
+  .side-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .side-link:hover { background: var(--paper-deep); color: var(--text); }
+  .side-label { margin: 18px 8px 4px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .setting { display: flex; align-items: center; gap: 10px; padding: 7px 8px; font-size: 13px; color: var(--ink-soft); }
+  .setting i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--lilac); font-style: normal; color: var(--violet); font-size: 12px; }
+  .side-foot { margin-top: auto; padding: 8px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px 32px 28px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .head .wordmark { display: flex; padding: 0; }
+  .status { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; color: var(--ink-soft); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; }
+  .status::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--violet); }
+  .pill18 { flex: none; font-size: 12px; font-weight: 600; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; color: var(--ink-soft); }
+
+  .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; border-radius: 999px; transition: transform .15s ease, background .15s ease, opacity .2s ease; }
   .btn:active { transform: scale(0.97); }
-  .btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-  .btn-primary { background: var(--brand); color: #fff; font-size: 15px; padding: 13px 30px; }
-  .btn-primary:hover { background: var(--brand-dark); }
-  .btn-ghost { background: transparent; border: 1px solid var(--panel-line); color: var(--paper); font-size: 13px; padding: 8px 18px; }
-  .btn-sm { font-size: 13px; padding: 8px 18px; }
+  .btn:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
+  .btn-primary { background: var(--lime); color: var(--ink); font-size: 15px; padding: 14px 34px; }
+  .btn-primary:hover { background: var(--lime-deep); }
+  .btn-ghost { background: rgba(255,255,255,.1); color: #fff; font-size: 13px; padding: 9px 18px; }
+  .btn-ghost:hover { background: rgba(255,255,255,.18); }
+  .btn-sm { font-size: 13px; padding: 10px 20px; }
   .btn:disabled { opacity: 0; pointer-events: none; }
   #skipBtn:disabled { display: none; }
 
-  .intro { text-align: center; max-width: 480px; margin: 24px auto 0; }
-  .intro-title { font-weight: 700; font-size: 36px; line-height: 1.1; letter-spacing: -0.03em; margin: 0 0 12px; text-wrap: balance; }
-  .intro-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 36px; }
+  .intro { flex: 1; display: flex; flex-direction: column; }
+  .intro-title { font-weight: 700; font-size: clamp(32px, 5.4vw, 52px); line-height: 1; letter-spacing: -0.045em; margin: 6px 0 10px; text-wrap: balance; }
+  .intro-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 18px; max-width: 52ch; }
 
-  .radius-control { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 30px; font-size: 14px; color: var(--muted); text-align: left; }
-  .radius-control label { min-width: 52px; }
-
-  select, input[type=number] {
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--paper);
-    background-color: var(--panel);
-    border: 1px solid var(--panel-line);
-    border-radius: 10px;
-    padding: 10px 12px;
-    color-scheme: dark;
-  }
-  select {
-    flex: 1;
-    min-width: 170px;
-    -webkit-appearance: none;
-    appearance: none;
-    cursor: pointer;
-    padding-right: 36px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5L6 6.5L11 1.5' fill='none' stroke='%239DB4E0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-  }
-  option { background: var(--panel); color: var(--paper); }
-  select:focus-visible, input[type=number]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-  .custom-radius { display: flex; align-items: center; gap: 8px; }
+  .dist { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; overflow: hidden; border-radius: 26px; background: var(--ink); color: var(--paper); padding: 20px 18px 22px; text-align: center; }
+  .dist::before { content: ""; position: absolute; inset: 0; opacity: .4; background-image: radial-gradient(circle at 1px 1px, rgba(247,244,237,.16) 1px, transparent 0); background-size: 18px 18px; }
+  .dist > * { position: relative; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); border-radius: 999px; padding: 5px 11px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--lime); }
+  .rings { position: relative; flex: none; width: 230px; height: 230px; margin: 28px 0 18px; display: grid; place-items: center; }
+  .rings .r1 { position: absolute; inset: 0; border-radius: 50%; border: 1px dashed rgba(255,255,255,.22); }
+  .rings .r2 { position: absolute; inset: 22%; border-radius: 50%; border: 1px solid rgba(221,247,122,.4); background: rgba(221,247,122,.1); }
+  .rings .me { position: relative; width: 22px; height: 22px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px rgba(221,247,122,.25); display: grid; place-items: center; }
+  .rings .me::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+  .rings .p { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
+  .dist-now { margin: 0 0 14px; font-size: 14px; color: rgba(247,244,237,.7); }
+  .dist-now b { color: var(--lime); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; margin-bottom: 14px; }
+  .chip { border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(247,244,237,.7); transition: background .15s ease, color .15s ease; }
+  .chip:hover { background: rgba(255,255,255,.16); color: #fff; }
+  .chip[aria-pressed="true"] { background: var(--lime); color: var(--ink); }
+  .chip:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .custom-radius { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; font-size: 14px; color: rgba(247,244,237,.7); }
   .custom-radius[hidden] { display: none; }
-  input[type=number] { width: 104px; font-variant-numeric: tabular-nums; }
-  .age-note { margin: 16px 0 0; font-size: 14px; color: var(--muted); }
-  .age-note a { color: inherit; text-underline-offset: 3px; }
+  input[type=number] { width: 104px; font-family: inherit; font-size: 15px; font-variant-numeric: tabular-nums; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 10px 12px; color-scheme: dark; }
+  input[type=number]:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  #findBtn { margin-top: 8px; }
+  .age-note { margin: 16px 0 0; max-width: 46ch; font-size: 12.5px; line-height: 1.55; color: rgba(247,244,237,.55); }
+  .age-note a { color: rgba(247,244,237,.85); text-underline-offset: 3px; }
   .acc-notice p { margin: 0 0 12px; }
   .acc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .acc-actions .btn-primary { font-size: 14px; padding: 9px 20px; }
-  .acc-actions .btn-ghost { font-size: 14px; padding: 9px 18px; }
-  .start-error { margin: 18px auto 0; max-width: 420px; padding: 12px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #F6D9A6; background: rgba(242,169,59,.10); border: 1px solid rgba(242,169,59,.40); border-radius: 12px; }
+  .acc-actions .btn-primary { font-size: 14px; padding: 10px 20px; }
+  .acc-actions .btn-ghost { font-size: 14px; padding: 10px 18px; }
+  .start-error { margin: 14px auto 0; max-width: 440px; padding: 13px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #f6d9a6; background: rgba(242,169,59,.12); border: 1px solid rgba(242,169,59,.4); border-radius: 16px; }
+  .start-error[hidden] { display: none; }
 
-  .call { display: none; }
-  body.active .call { display: block; }
+  .call { display: none; flex: 1; }
+  body.active .call { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
   body.active .intro { display: none; }
-
-  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: 560px; background: var(--stage); border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
-  .video-frame { position: absolute; overflow: hidden; background: var(--stage); user-select: none; }
+  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: calc(100vh - 150px); background: var(--ink); border-radius: 22px; overflow: hidden; }
+  .video-frame { position: absolute; overflow: hidden; background: var(--ink); user-select: none; }
   .video-frame video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
-  .video-frame.big { inset: 0; z-index: 1; border-radius: 10px; }
-  .video-frame.pip {
-    width: clamp(96px, 30%, 200px);
-    aspect-ratio: 4 / 3;
-    right: 14px; bottom: 14px;
-    z-index: 2;
-    border: 2px solid var(--navy);
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.5);
-    cursor: grab;
-    touch-action: none;
-  }
+  .video-frame.big { inset: 0; z-index: 1; border-radius: 22px; }
+  .video-frame.pip { width: clamp(96px, 28%, 190px); aspect-ratio: 4 / 3; right: 14px; bottom: 14px; z-index: 2; border: 2px solid var(--lime); border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: grab; touch-action: none; }
   .video-frame.pip:active { cursor: grabbing; }
-  .video-label { position: absolute; left: 10px; bottom: 8px; font-size: 12px; background: rgba(0,0,0,.45); padding: 3px 9px; border-radius: 999px; z-index: 3; pointer-events: none; }
+  .video-label { position: absolute; left: 10px; bottom: 9px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--lime); padding: 3px 10px; border-radius: 999px; z-index: 3; pointer-events: none; }
 
-  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding-bottom: 130px; background: rgba(4,14,39,.88); }
+  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding-bottom: 110px; background: radial-gradient(circle at 50% 40%, #2c2347, var(--ink) 70%); }
   body.matched .radar-overlay { display: none; }
   .radar { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
-  .radar .dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
-  .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ring); opacity: 0; }
+  .radar .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px rgba(221,247,122,.2); }
+  .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--lime); opacity: 0; }
   body.active:not(.matched) .radar .ring { animation: ripple 2.4s ease-out infinite; }
   body.active:not(.matched) .radar .ring-2 { animation-delay: .8s; }
   body.active:not(.matched) .radar .ring-3 { animation-delay: 1.6s; }
-  @keyframes ripple {
-    0% { transform: scale(0.5); opacity: .55; }
-    100% { transform: scale(1.8); opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    body.active:not(.matched) .radar .ring { animation: none; opacity: .35; }
-  }
-  .overlay-text { font-size: 13px; color: var(--muted); }
-  .overlay-hint { max-width: 30ch; margin: 0; padding: 0 16px; text-align: center; font-size: 13px; line-height: 1.45; color: var(--paper); }
+  @keyframes ripple { 0% { transform: scale(0.5); opacity: .6; } 100% { transform: scale(1.8); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { body.active:not(.matched) .radar .ring { animation: none; opacity: .35; } }
+  .overlay-text { margin: 0; font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-size: 26px; color: #fff; text-align: center; }
+  .overlay-hint { max-width: 32ch; margin: 0; padding: 0 16px; text-align: center; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.7); }
   .overlay-hint:empty { display: none; }
-  .diag { margin: 22px 0 0; font-size: 13px; color: var(--muted); }
-  .diag summary { cursor: pointer; width: max-content; padding: 4px 0; }
-  .diag dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 10px 0 0; }
-  .diag dt { color: var(--muted); }
-  .diag dd { margin: 0; color: var(--paper); overflow-wrap: anywhere; }
 
-  .chatbox { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 20px; overflow: hidden; }
-  .chat-log { height: 160px; overflow-y: auto; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
-  .chat-log div { margin-bottom: 4px; }
-  .chat-input { width: 100%; border: none; border-top: 1px solid var(--panel-line); background: transparent; color: var(--paper); font-family: inherit; font-size: 14px; padding: 12px 16px; }
+  .dock { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px 10px 16px; background: var(--ink); border-radius: 18px; }
+  .dock-note { font-size: 12px; color: rgba(247,244,237,.55); }
+  .dock-btns { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  #stopBtn { background: var(--coral); color: #fff; }
+  #stopBtn:hover { background: #ee4a4a; }
+
+  .chatbox { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+  .chat-head { padding: 14px 16px 6px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .chat-log { height: calc(100vh - 290px); min-height: 220px; overflow-y: auto; padding: 8px 16px 12px; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+  .chat-log div { margin-bottom: 8px; }
+  .chat-input { width: calc(100% - 20px); margin: 0 10px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); color: var(--text); font-family: inherit; font-size: 14px; padding: 12px 14px; }
   .chat-input::placeholder { color: var(--muted); }
-  .chat-input:focus { outline: none; }
-  .chat-input:disabled { opacity: .4; }
+  .chat-input:focus { outline: 2px solid var(--violet); outline-offset: 1px; }
+  .chat-input:disabled { opacity: .5; background: var(--paper-deep); }
 
+  .diag { margin: 18px 0 0; font-size: 13px; color: var(--muted); }
+  .diag summary { cursor: pointer; width: max-content; padding: 4px 0; }
+  .diag dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 10px 0 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  .diag dt { color: var(--muted); }
+  .diag dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+
+  @media (min-width: 900px) {
+    .side { display: flex; }
+    .head .wordmark { display: none; }
+    .head { justify-content: flex-end; }
+  }
+  @media (max-width: 899px) {
+    body.active .call { grid-template-columns: 1fr; }
+    .chat-log { height: 160px; }
+  }
   @media (max-width: 640px) {
-    .call-stage { aspect-ratio: 4 / 5; }
-    .topbar { flex-wrap: wrap; gap: 12px; }
-    .topbar-right { flex-wrap: wrap; justify-content: flex-end; }
+    .main { padding: 14px 12px 16px; }
+    .call-stage { aspect-ratio: 4 / 5; border-radius: 18px; }
+    .video-frame.big { border-radius: 18px; }
+    .rings { width: 150px; height: 150px; }
+    .dock { flex-wrap: wrap; }
   }
 </style>
 <script src="/hit.js" defer></script>
@@ -157,87 +173,128 @@
 <body class="idle">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="nh-mark" viewBox="0 0 645 554"><path fill-rule="evenodd" d="M564.0 198.4 L560.0 197.1 L556.0 194.4 L553.6 192.0 L532.0 165.3 L517.8 145.0 L505.3 124.0 L494.8 103.0 L490.8 91.0 L489.6 85.0 L489.4 81.0 L488.5 77.0 L488.5 70.0 L489.4 66.0 L489.6 62.0 L491.8 53.0 L493.8 47.0 L496.7 41.0 L504.6 29.0 L516.0 17.6 L526.0 10.8 L536.0 5.8 L545.0 2.8 L555.0 0.6 L569.0 -0.5 L585.0 1.8 L600.0 6.7 L613.3 14.0 L618.0 17.6 L628.5 28.0 L635.2 37.0 L640.2 47.0 L644.4 61.0 L644.6 66.0 L645.5 70.0 L645.5 78.0 L644.6 82.0 L644.4 86.0 L641.2 98.0 L635.3 112.0 L624.2 132.0 L612.2 150.0 L603.0 162.3 L586.4 182.0 L573.0 195.4 L568.0 198.2ZM571.0 106.4 L579.0 104.1 L584.0 101.2 L590.2 95.0 L593.3 90.0 L595.4 84.0 L595.4 72.0 L594.2 68.0 L591.2 62.0 L584.0 54.8 L579.0 51.8 L572.0 49.8 L563.0 49.6 L558.0 50.8 L550.0 54.8 L543.6 61.0 L539.8 68.0 L538.6 72.0 L537.7 78.0 L538.8 85.0 L541.7 92.0 L543.6 95.0 L549.0 100.4 L553.0 103.1 L558.0 105.2 L563.0 106.4ZM16.0 534.5 L10.8 528.0 L5.9 520.0 L2.8 513.0 L-0.5 498.0 L-0.5 147.0 L1.8 136.0 L4.8 127.0 L7.8 121.0 L16.6 108.0 L26.5 98.0 L35.0 91.8 L44.0 86.8 L54.0 82.8 L68.0 79.6 L73.0 79.4 L77.0 78.5 L88.0 78.6 L91.0 79.4 L96.0 79.6 L110.0 82.8 L120.0 86.7 L133.0 93.8 L139.0 98.6 L147.0 106.5 L153.2 115.0 L158.1 124.0 L160.2 129.0 L162.2 136.0 L162.7 140.0 L164.0 140.8 L167.5 138.0 L171.0 133.5 L184.5 120.0 L202.7 105.0 L218.0 94.8 L225.0 90.8 L244.0 81.8 L271.0 72.8 L298.0 67.6 L306.0 67.4 L310.0 66.5 L342.0 66.5 L346.0 67.4 L354.0 67.6 L357.0 68.4 L361.0 68.6 L377.0 71.6 L393.0 75.8 L407.0 80.8 L426.0 89.8 L437.0 96.8 L446.0 103.6 L459.0 116.5 L469.0 130.5 L474.2 141.0 L479.2 155.0 L481.4 165.0 L481.6 171.0 L482.5 175.0 L482.5 185.0 L481.6 189.0 L481.4 195.0 L478.2 209.0 L476.2 215.0 L469.2 230.0 L463.0 239.3 L457.4 246.0 L453.0 250.4 L442.6 259.0 L439.8 263.0 L436.8 269.0 L436.4 276.0 L435.5 280.0 L435.4 298.0 L434.6 301.0 L434.4 309.0 L433.0 311.4 L431.0 312.4 L428.0 312.4 L424.0 310.4 L421.0 306.5 L410.6 296.0 L408.0 292.5 L388.0 272.8 L381.0 269.8 L375.0 268.6 L370.0 268.4 L359.0 266.2 L340.0 260.2 L331.0 256.3 L324.0 252.2 L304.0 237.8 L293.4 232.0 L280.0 226.8 L272.0 224.6 L260.0 222.6 L233.0 222.6 L221.0 224.8 L211.0 227.8 L194.0 235.8 L186.0 241.6 L174.6 253.0 L168.8 261.0 L161.8 276.0 L158.8 287.0 L157.6 294.0 L157.5 498.0 L154.2 512.0 L149.2 523.0 L144.4 530.0 L136.0 538.4 L124.0 546.1 L114.0 550.2 L95.0 554.4 L63.0 554.5 L46.0 551.2 L40.0 549.2 L31.0 545.2 L22.7 540.0ZM375.0 549.2 L364.0 544.2 L357.7 540.0 L349.6 533.0 L342.8 524.0 L339.3 517.0 L335.8 507.0 L334.6 501.0 L333.5 492.0 L333.7 293.0 L335.0 292.0 L343.0 293.8 L355.0 297.8 L367.0 303.3 L386.0 314.8 L396.3 322.0 L409.0 332.4 L417.0 338.2 L423.0 341.2 L427.0 342.4 L436.0 342.4 L441.0 341.2 L445.0 339.2 L449.5 336.0 L453.2 331.0 L456.2 325.0 L459.8 307.0 L464.8 289.0 L468.9 280.0 L475.8 269.0 L481.0 262.5 L486.0 258.2 L487.3 259.0 L490.4 271.0 L492.4 283.0 L492.6 287.0 L493.4 290.0 L493.6 297.0 L494.5 301.0 L494.6 315.0 L495.5 319.0 L495.5 492.0 L494.6 496.0 L494.4 501.0 L491.2 514.0 L484.2 527.0 L476.0 536.4 L468.0 542.2 L461.0 546.2 L451.0 550.2 L431.0 554.4 L399.0 554.5 L395.0 553.6 L391.0 553.4Z"/></symbol></svg>
 <main class="app">
+<div class="shell">
 
-  <div class="topbar">
+  <aside class="side">
     <a class="wordmark" href="/" aria-label="NearHi home">
       <span class="badge" aria-hidden="true"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>
-      NearHi
+      nearhi
     </a>
-    <div class="topbar-right">
+    <a class="side-link" href="/">Home</a>
+    <a class="side-link" href="/terms/">Terms</a>
+    <a class="side-link" href="/privacy/">Privacy</a>
+    <p class="side-label">Your settings</p>
+    <div class="setting"><i aria-hidden="true">&#9906;</i><span>Distance: <span id="sideDist">no limit</span></span></div>
+    <p class="side-foot">No account needed. 18+ only.</p>
+  </aside>
+
+  <div class="main">
+    <div class="head">
+      <a class="wordmark" href="/" aria-label="NearHi home">
+        <span class="badge" aria-hidden="true"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>
+        nearhi
+      </a>
       <span id="status" class="status">Connecting…</span>
-      <button id="reportBtn" class="btn btn-ghost btn-sm" disabled>Report</button>
-      <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
-      <button id="stopBtn" class="btn btn-ghost" disabled>Stop</button>
-    </div>
-  </div>
-
-  <section class="intro">
-    <h1 class="intro-title">Find someone nearby to talk to</h1>
-    <p class="intro-sub">Random video and text chat with people within the distance you choose.</p>
-
-    <div class="radius-control">
-      <label for="radiusSelect">Radius</label>
-      <select id="radiusSelect">
-        <option value="10">10 km</option>
-        <option value="25">25 km</option>
-        <option value="50">50 km</option>
-        <option value="100">100 km</option>
-        <option value="250">250 km</option>
-        <option value="500">500 km</option>
-        <option value="1000">1000 km</option>
-        <option value="anywhere" selected>Anywhere (no limit)</option>
-        <option value="custom">Custom…</option>
-      </select>
-      <span class="custom-radius" id="customWrap" hidden>
-        <input type="number" id="radiusCustom" min="10" max="20000" step="1" value="10" inputmode="numeric" aria-label="Custom radius in kilometers">
-        <span>km</span>
-      </span>
+      <span class="pill18">18+</span>
     </div>
 
-    <button id="findBtn" class="btn btn-primary">Start talking</button>
-    <p class="age-note">18+ only. By starting, you confirm you are an adult and agree to the <a href="/terms/">Terms</a> and <a href="/privacy/">Privacy Policy</a>.</p>
-    <p id="startError" class="start-error" role="alert" hidden></p>
-    <div id="accNotice" class="start-error acc-notice" role="alert" hidden>
-      <p id="accText"></p>
-      <div class="acc-actions">
-        <button type="button" id="accWiden" class="btn btn-primary"></button>
-        <button type="button" id="accKeep" class="btn btn-ghost">Search anyway</button>
-      </div>
-    </div>
-  </section>
+    <section class="intro">
+      <h1 class="intro-title">Pick a distance. <span class="serif">Say hi.</span></h1>
+      <p class="intro-sub">Random video and text chat with people within the distance you choose.</p>
 
-  <section class="call">
-    <div class="call-stage" id="callStage">
-      <div class="video-frame big" id="remoteFrame">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <span class="video-label">Stranger</span>
-        <div class="radar-overlay">
-          <div class="radar" aria-hidden="true">
-            <span class="ring ring-1"></span>
-            <span class="ring ring-2"></span>
-            <span class="ring ring-3"></span>
-            <span class="dot"></span>
+      <div class="dist">
+        <span class="tag">Distance</span>
+        <div class="rings" aria-hidden="true">
+          <span class="r1"></span><span class="r2"></span><span class="me"></span>
+          <span class="p" style="left:18%;top:30%"></span><span class="p" style="left:70%;top:22%"></span><span class="p" style="left:78%;top:66%"></span><span class="p" style="left:34%;top:78%"></span>
+        </div>
+        <p class="dist-now">Matching you within <b id="distNow">no limit</b></p>
+
+        <label for="radiusSelect" class="sr-only">Radius</label>
+        <select id="radiusSelect" class="sr-only">
+          <option value="10">10 km</option>
+          <option value="25">25 km</option>
+          <option value="50">50 km</option>
+          <option value="100">100 km</option>
+          <option value="250">250 km</option>
+          <option value="500">500 km</option>
+          <option value="1000">1000 km</option>
+          <option value="anywhere" selected>Anywhere (no limit)</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <div class="chips" id="chips" role="group" aria-label="Distance">
+          <button type="button" class="chip" data-v="10">10 km</button>
+          <button type="button" class="chip" data-v="25">25 km</button>
+          <button type="button" class="chip" data-v="50">50 km</button>
+          <button type="button" class="chip" data-v="100">100 km</button>
+          <button type="button" class="chip" data-v="250">250 km</button>
+          <button type="button" class="chip" data-v="500">500 km</button>
+          <button type="button" class="chip" data-v="1000">1000 km</button>
+          <button type="button" class="chip" data-v="anywhere">Anywhere</button>
+          <button type="button" class="chip" data-v="custom">Custom</button>
+        </div>
+        <span class="custom-radius" id="customWrap" hidden>
+          <input type="number" id="radiusCustom" min="10" max="20000" step="1" value="10" inputmode="numeric" aria-label="Custom radius in kilometers">
+          <span>km</span>
+        </span>
+
+        <button id="findBtn" class="btn btn-primary">Start talking</button>
+        <p class="age-note">18+ only. By starting, you confirm you are an adult and agree to the <a href="/terms/">Terms</a> and <a href="/privacy/">Privacy Policy</a>.</p>
+        <p id="startError" class="start-error" role="alert" hidden></p>
+        <div id="accNotice" class="start-error acc-notice" role="alert" hidden>
+          <p id="accText"></p>
+          <div class="acc-actions">
+            <button type="button" id="accWiden" class="btn btn-primary"></button>
+            <button type="button" id="accKeep" class="btn btn-ghost">Search anyway</button>
           </div>
-          <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
-          <p class="overlay-hint" id="searchHint" role="status"></p>
         </div>
       </div>
-      <div class="video-frame pip" id="localFrame">
-        <video id="localVideo" autoplay muted playsinline></video>
-        <span class="video-label">You</span>
+    </section>
+
+    <section class="call">
+      <div class="stage-col">
+        <div class="call-stage" id="callStage">
+          <div class="video-frame big" id="remoteFrame">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <span class="video-label">Stranger</span>
+            <div class="radar-overlay">
+              <div class="radar" aria-hidden="true">
+                <span class="ring ring-1"></span>
+                <span class="ring ring-2"></span>
+                <span class="ring ring-3"></span>
+                <span class="dot"></span>
+              </div>
+              <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
+              <p class="overlay-hint" id="searchHint" role="status"></p>
+            </div>
+          </div>
+          <div class="video-frame pip" id="localFrame">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <span class="video-label">You</span>
+          </div>
+        </div>
+        <div class="dock">
+          <span class="dock-note">Drag your small view to move it</span>
+          <div class="dock-btns">
+            <button id="reportBtn" class="btn btn-ghost btn-sm" disabled>Report</button>
+            <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
+            <button id="stopBtn" class="btn btn-ghost btn-sm" disabled>Stop</button>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="chatbox">
-      <div id="chat" class="chat-log"></div>
-      <input id="chatInput" class="chat-input" placeholder="Type a message and hit enter" disabled>
-    </div>
-  </section>
+      <div class="chatbox">
+        <div class="chat-head">Text chat</div>
+        <div id="chat" class="chat-log"></div>
+        <input id="chatInput" class="chat-input" placeholder="Say something…" disabled>
+      </div>
+    </section>
 
-  <details class="diag" id="diag">
-    <summary>Connection details</summary>
-    <dl id="diagList"></dl>
-  </details>
-
+    <details class="diag" id="diag">
+      <summary>Connection details</summary>
+      <dl id="diagList"></dl>
+    </details>
+  </div>
+</div>
 </main>
 
 <script>
@@ -955,6 +1012,43 @@ function onPipPointerUp() {
   frame.addEventListener('pointerup', onPipPointerUp);
   frame.addEventListener('pointercancel', onPipPointerUp);
 });
+</script>
+<script>
+// Distance chips drive the hidden #radiusSelect, which the main script reads. Display only.
+(function () {
+  var sel = document.getElementById('radiusSelect');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#chips .chip'));
+  var now = document.getElementById('distNow');
+  var side = document.getElementById('sideDist');
+  var last = null;
+  function label() {
+    if (sel.value === 'anywhere') return 'no limit';
+    if (sel.value === 'custom') {
+      var n = document.getElementById('radiusCustom').value;
+      return (n || '?') + ' km';
+    }
+    return sel.value + ' km';
+  }
+  function sync() {
+    var key = sel.value + '|' + document.getElementById('radiusCustom').value;
+    if (key === last) return;
+    last = key;
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.v === sel.value)); });
+    var t = label();
+    now.textContent = t;
+    side.textContent = t;
+  }
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      sel.value = c.dataset.v;
+      if (sel.onchange) sel.onchange();
+      sync();
+    });
+  });
+  document.getElementById('radiusCustom').addEventListener('input', sync);
+  setInterval(sync, 400); // catches the page widening the radius itself
+  sync();
+})();
 </script>
 </body>
 </html>

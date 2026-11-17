@@ -5,3 +5,6 @@ venv/
 .venv/
 dump.rdb
 *.rdb
+static/vendor/
+static/models/
+evidence/

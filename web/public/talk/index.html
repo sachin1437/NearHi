@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NearHi: start talking</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://nearhi.in/talk/">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#f7f4ed">
+<script>try{var t=localStorage.getItem('nh-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="preload" href="/fonts/bricolage-grotesque-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  @font-face { font-family: "Instrument Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/instrument-serif-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/instrument-serif-latin-400-italic.woff2) format("woff2"); }
+  :root {
+    --paper: #f7f4ed; --paper-deep: #efeade; --card: #fbf8f1;
+    --ink: #15131b; --ink-soft: #24202c; --muted: #6a6474; --line: #e3ddd1;
+    --lilac: #e9e2ff; --violet: #6c4bf4; --violet-dark: #5534d8;
+    --lime: #ddf77a; --lime-deep: #c8e75c; --coral: #ff5d5d; --text: #15131b; --field: #ffffff;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #120f17; --paper-deep: #201c2a; --card: #181420; --ink: #1d1927; --ink-soft: #e2ddd2;
+    --muted: #a8a2b4; --line: #2c2735; --lilac: #2b2352; --violet: #8a6dff; --violet-dark: #b5a2ff;
+    --text: #f3efe6; --field: #1f1b29;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--text); font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: 0; opacity: .55; pointer-events: none; background: radial-gradient(60% 45% at 30% 0%, rgba(108,75,244,.38), transparent 70%), radial-gradient(40% 35% at 90% 100%, rgba(221,247,122,.08), transparent 70%); }
+  ::selection { background: var(--lime); color: var(--ink); }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; color: var(--violet); }
+
+  .app { position: relative; z-index: 1; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; background: var(--paper); }
+
+  .side { display: none; flex: none; width: 240px; position: sticky; top: 0; height: 100vh; align-self: flex-start; flex-direction: column; gap: 6px; padding: 18px 14px; background: var(--card); border-right: 1px solid var(--line); }
+  .wordmark { display: flex; align-items: center; gap: 9px; padding: 2px 6px 18px; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; color: var(--text); }
+  .wordmark .badge { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; background: var(--ink); }
+  .wordmark .badge svg { width: 58%; height: auto; fill: var(--lime); }
+  .side-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .side-link:hover { background: var(--paper-deep); color: var(--text); }
+  .side-label { margin: 18px 8px 4px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .setting { display: flex; align-items: center; gap: 10px; padding: 7px 8px; font-size: 13px; color: var(--ink-soft); }
+  .setting i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--lilac); font-style: normal; color: var(--violet); font-size: 12px; }
+  .side-foot { margin-top: auto; padding: 8px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px 32px 28px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .head .wordmark { display: flex; padding: 0; }
+  .status { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; color: var(--ink-soft); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; }
+  .status::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--violet); }
+  .pill18 { flex: none; font-size: 12px; font-weight: 600; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; color: var(--ink-soft); }
+
+  .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; border-radius: 999px; transition: transform .15s ease, background .15s ease, opacity .2s ease; }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
+  .btn-primary { background: var(--lime); color: var(--ink); font-size: 15px; padding: 14px 34px; }
+  .btn-primary:hover { background: var(--lime-deep); }
+  .btn-ghost { background: rgba(255,255,255,.1); color: #fff; font-size: 13px; padding: 9px 18px; }
+  .btn-ghost:hover { background: rgba(255,255,255,.18); }
+  .btn-sm { font-size: 13px; padding: 10px 20px; }
+  .btn:disabled { opacity: 0; pointer-events: none; }
+  #skipBtn:disabled { display: none; }
+
+  .intro { flex: 1; display: flex; flex-direction: column; }
+  .intro-title { font-weight: 700; font-size: clamp(32px, 5.4vw, 52px); line-height: 1; letter-spacing: -0.045em; margin: 6px 0 10px; text-wrap: balance; }
+  .intro-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 18px; max-width: 52ch; }
+
+  .dist { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; overflow: hidden; border-radius: 26px; background: var(--ink); color: var(--paper); padding: 20px 18px 22px; text-align: center; }
+  .dist::before { content: ""; position: absolute; inset: 0; opacity: .4; background-image: radial-gradient(circle at 1px 1px, rgba(247,244,237,.16) 1px, transparent 0); background-size: 18px 18px; }
+  .dist > * { position: relative; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); border-radius: 999px; padding: 5px 11px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--lime); }
+  .rings { position: relative; flex: none; width: 230px; height: 230px; margin: 28px 0 18px; display: grid; place-items: center; }
+  .rings .r1 { position: absolute; inset: 0; border-radius: 50%; border: 1px dashed rgba(255,255,255,.22); }
+  .rings .r2 { position: absolute; inset: 22%; border-radius: 50%; border: 1px solid rgba(221,247,122,.4); background: rgba(221,247,122,.1); }
+  .rings .me { position: relative; width: 22px; height: 22px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px rgba(221,247,122,.25); display: grid; place-items: center; }
+  .rings .me::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+  .rings .p { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
+  .dist-now { margin: 0 0 14px; font-size: 14px; color: rgba(247,244,237,.7); }
+  .dist-now b { color: var(--lime); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; margin-bottom: 14px; }
+  .chip { border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(247,244,237,.7); transition: background .15s ease, color .15s ease; }
+  .chip:hover { background: rgba(255,255,255,.16); color: #fff; }
+  .chip[aria-pressed="true"] { background: var(--lime); color: var(--ink); }
+  .chip:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .custom-radius { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; font-size: 14px; color: rgba(247,244,237,.7); }
+  .custom-radius[hidden] { display: none; }
+  input[type=number] { width: 104px; font-family: inherit; font-size: 15px; font-variant-numeric: tabular-nums; color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 10px 12px; color-scheme: dark; }
+  input[type=number]:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  #findBtn { margin-top: 8px; }
+  .age-note { margin: 16px 0 0; max-width: 46ch; font-size: 12.5px; line-height: 1.55; color: rgba(247,244,237,.55); }
+  .age-note a { color: rgba(247,244,237,.85); text-underline-offset: 3px; }
+  .acc-notice p { margin: 0 0 12px; }
+  .acc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .acc-actions .btn-primary { font-size: 14px; padding: 10px 20px; }
+  .acc-actions .btn-ghost { font-size: 14px; padding: 10px 18px; }
+  .start-error { margin: 14px auto 0; max-width: 440px; padding: 13px 16px; font-size: 14px; line-height: 1.5; text-align: left; color: #f6d9a6; background: rgba(242,169,59,.12); border: 1px solid rgba(242,169,59,.4); border-radius: 16px; }
+  .start-error[hidden] { display: none; }
+
+  .call { display: none; flex: 1; }
+  body.active .call { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+  body.active .intro { display: none; }
+  .call-stage { position: relative; width: 100%; aspect-ratio: 16 / 10; max-height: calc(100vh - 150px); background: var(--ink); border-radius: 22px; overflow: hidden; }
+  .video-frame { position: absolute; overflow: hidden; background: var(--ink); user-select: none; }
+  .video-frame video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
+  .video-frame.big { inset: 0; z-index: 1; border-radius: 22px; }
+  .video-frame.pip { width: clamp(96px, 28%, 190px); aspect-ratio: 4 / 3; right: 14px; bottom: 14px; z-index: 2; border: 2px solid var(--lime); border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.5); cursor: grab; touch-action: none; }
+  .video-frame.pip:active { cursor: grabbing; }
+  .video-label { position: absolute; left: 10px; bottom: 9px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--lime); padding: 3px 10px; border-radius: 999px; z-index: 3; pointer-events: none; }
+
+  .radar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding-bottom: 110px; background: radial-gradient(circle at 50% 40%, #2c2347, var(--ink) 70%); }
+  body.matched .radar-overlay { display: none; }
+  .radar { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
+  .radar .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px rgba(221,247,122,.2); }
+  .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--lime); opacity: 0; }
+  body.active:not(.matched) .radar .ring { animation: ripple 2.4s ease-out infinite; }
+  body.active:not(.matched) .radar .ring-2 { animation-delay: .8s; }
+  body.active:not(.matched) .radar .ring-3 { animation-delay: 1.6s; }
+  @keyframes ripple { 0% { transform: scale(0.5); opacity: .6; } 100% { transform: scale(1.8); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { body.active:not(.matched) .radar .ring { animation: none; opacity: .35; } }
+  .overlay-text { margin: 0; font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-size: 26px; color: #fff; text-align: center; }
+  .overlay-hint { max-width: 32ch; margin: 0; padding: 0 16px; text-align: center; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.7); }
+  .overlay-hint:empty { display: none; }
+
+  .dock { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px 10px 16px; background: var(--ink); border-radius: 18px; }
+  .dock-note { font-size: 12px; color: rgba(247,244,237,.55); }
+  .dock-btns { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  #stopBtn { background: var(--coral); color: #fff; }
+  #stopBtn:hover { background: #ee4a4a; }
+
+  .chatbox { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+  .chat-head { padding: 14px 16px 6px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .chat-log { height: calc(100vh - 290px); min-height: 220px; overflow-y: auto; padding: 8px 16px 12px; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+  .chat-log div { margin-bottom: 8px; }
+  .chat-input { width: calc(100% - 20px); margin: 0 10px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); color: var(--text); font-family: inherit; font-size: 14px; padding: 12px 14px; }
+  .chat-input::placeholder { color: var(--muted); }
+  .chat-input:focus { outline: 2px solid var(--violet); outline-offset: 1px; }
+  .chat-input:disabled { opacity: .5; background: var(--paper-deep); }
+
+  .diag { margin: 18px 0 0; font-size: 13px; color: var(--muted); }
+  .diag summary { cursor: pointer; width: max-content; padding: 4px 0; }
+  .diag dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 10px 0 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  .diag dt { color: var(--muted); }
+  .diag dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+
+  @media (min-width: 900px) {
+    .side { display: flex; }
+    .head .wordmark { display: none; }
+    .head { justify-content: flex-end; }
+  }
+  @media (max-width: 899px) {
+    body.active .call { grid-template-columns: 1fr; }
+    .chat-log { height: 160px; }
+  }
+  @media (max-width: 640px) {
+    .main { padding: 14px 12px 16px; }
+    .call-stage { aspect-ratio: 4 / 5; border-radius: 18px; }
+    .video-frame.big { border-radius: 18px; }
+    .rings { width: 150px; height: 150px; }
+    .dock { flex-wrap: wrap; }
+  }
+</style>
+<script src="/hit.js" defer></script>
+</head>
+<body class="idle">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="nh-mark" viewBox="0 0 645 554"><path fill-rule="evenodd" d="M564.0 198.4 L560.0 197.1 L556.0 194.4 L553.6 192.0 L532.0 165.3 L517.8 145.0 L505.3 124.0 L494.8 103.0 L490.8 91.0 L489.6 85.0 L489.4 81.0 L488.5 77.0 L488.5 70.0 L489.4 66.0 L489.6 62.0 L491.8 53.0 L493.8 47.0 L496.7 41.0 L504.6 29.0 L516.0 17.6 L526.0 10.8 L536.0 5.8 L545.0 2.8 L555.0 0.6 L569.0 -0.5 L585.0 1.8 L600.0 6.7 L613.3 14.0 L618.0 17.6 L628.5 28.0 L635.2 37.0 L640.2 47.0 L644.4 61.0 L644.6 66.0 L645.5 70.0 L645.5 78.0 L644.6 82.0 L644.4 86.0 L641.2 98.0 L635.3 112.0 L624.2 132.0 L612.2 150.0 L603.0 162.3 L586.4 182.0 L573.0 195.4 L568.0 198.2ZM571.0 106.4 L579.0 104.1 L584.0 101.2 L590.2 95.0 L593.3 90.0 L595.4 84.0 L595.4 72.0 L594.2 68.0 L591.2 62.0 L584.0 54.8 L579.0 51.8 L572.0 49.8 L563.0 49.6 L558.0 50.8 L550.0 54.8 L543.6 61.0 L539.8 68.0 L538.6 72.0 L537.7 78.0 L538.8 85.0 L541.7 92.0 L543.6 95.0 L549.0 100.4 L553.0 103.1 L558.0 105.2 L563.0 106.4ZM16.0 534.5 L10.8 528.0 L5.9 520.0 L2.8 513.0 L-0.5 498.0 L-0.5 147.0 L1.8 136.0 L4.8 127.0 L7.8 121.0 L16.6 108.0 L26.5 98.0 L35.0 91.8 L44.0 86.8 L54.0 82.8 L68.0 79.6 L73.0 79.4 L77.0 78.5 L88.0 78.6 L91.0 79.4 L96.0 79.6 L110.0 82.8 L120.0 86.7 L133.0 93.8 L139.0 98.6 L147.0 106.5 L153.2 115.0 L158.1 124.0 L160.2 129.0 L162.2 136.0 L162.7 140.0 L164.0 140.8 L167.5 138.0 L171.0 133.5 L184.5 120.0 L202.7 105.0 L218.0 94.8 L225.0 90.8 L244.0 81.8 L271.0 72.8 L298.0 67.6 L306.0 67.4 L310.0 66.5 L342.0 66.5 L346.0 67.4 L354.0 67.6 L357.0 68.4 L361.0 68.6 L377.0 71.6 L393.0 75.8 L407.0 80.8 L426.0 89.8 L437.0 96.8 L446.0 103.6 L459.0 116.5 L469.0 130.5 L474.2 141.0 L479.2 155.0 L481.4 165.0 L481.6 171.0 L482.5 175.0 L482.5 185.0 L481.6 189.0 L481.4 195.0 L478.2 209.0 L476.2 215.0 L469.2 230.0 L463.0 239.3 L457.4 246.0 L453.0 250.4 L442.6 259.0 L439.8 263.0 L436.8 269.0 L436.4 276.0 L435.5 280.0 L435.4 298.0 L434.6 301.0 L434.4 309.0 L433.0 311.4 L431.0 312.4 L428.0 312.4 L424.0 310.4 L421.0 306.5 L410.6 296.0 L408.0 292.5 L388.0 272.8 L381.0 269.8 L375.0 268.6 L370.0 268.4 L359.0 266.2 L340.0 260.2 L331.0 256.3 L324.0 252.2 L304.0 237.8 L293.4 232.0 L280.0 226.8 L272.0 224.6 L260.0 222.6 L233.0 222.6 L221.0 224.8 L211.0 227.8 L194.0 235.8 L186.0 241.6 L174.6 253.0 L168.8 261.0 L161.8 276.0 L158.8 287.0 L157.6 294.0 L157.5 498.0 L154.2 512.0 L149.2 523.0 L144.4 530.0 L136.0 538.4 L124.0 546.1 L114.0 550.2 L95.0 554.4 L63.0 554.5 L46.0 551.2 L40.0 549.2 L31.0 545.2 L22.7 540.0ZM375.0 549.2 L364.0 544.2 L357.7 540.0 L349.6 533.0 L342.8 524.0 L339.3 517.0 L335.8 507.0 L334.6 501.0 L333.5 492.0 L333.7 293.0 L335.0 292.0 L343.0 293.8 L355.0 297.8 L367.0 303.3 L386.0 314.8 L396.3 322.0 L409.0 332.4 L417.0 338.2 L423.0 341.2 L427.0 342.4 L436.0 342.4 L441.0 341.2 L445.0 339.2 L449.5 336.0 L453.2 331.0 L456.2 325.0 L459.8 307.0 L464.8 289.0 L468.9 280.0 L475.8 269.0 L481.0 262.5 L486.0 258.2 L487.3 259.0 L490.4 271.0 L492.4 283.0 L492.6 287.0 L493.4 290.0 L493.6 297.0 L494.5 301.0 L494.6 315.0 L495.5 319.0 L495.5 492.0 L494.6 496.0 L494.4 501.0 L491.2 514.0 L484.2 527.0 L476.0 536.4 L468.0 542.2 L461.0 546.2 L451.0 550.2 L431.0 554.4 L399.0 554.5 L395.0 553.6 L391.0 553.4Z"/></symbol></svg>
+<main class="app">
+<div class="shell">
+
+  <aside class="side">
+    <a class="wordmark" href="/" aria-label="NearHi home">
+      <span class="badge" aria-hidden="true"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>
+      nearhi
+    </a>
+    <a class="side-link" href="/">Home</a>
+    <a class="side-link" href="/terms/">Terms</a>
+    <a class="side-link" href="/privacy/">Privacy</a>
+    <p class="side-label">Your settings</p>
+    <div class="setting"><i aria-hidden="true">&#9906;</i><span>Distance: <span id="sideDist">no limit</span></span></div>
+    <p class="side-foot">No account needed. 18+ only.</p>
+  </aside>
+
+  <div class="main">
+    <div class="head">
+      <a class="wordmark" href="/" aria-label="NearHi home">
+        <span class="badge" aria-hidden="true"><svg viewBox="0 0 645 554"><use href="#nh-mark"/></svg></span>
+        nearhi
+      </a>
+      <span id="status" class="status">Connecting…</span>
+      <span class="pill18">18+</span>
+    </div>
+
+    <section class="intro">
+      <h1 class="intro-title">Pick a distance. <span class="serif">Say hi.</span></h1>
+      <p class="intro-sub">Random video and text chat with people within the distance you choose.</p>
+
+      <div class="dist">
+        <span class="tag">Distance</span>
+        <div class="rings" aria-hidden="true">
+          <span class="r1"></span><span class="r2"></span><span class="me"></span>
+          <span class="p" style="left:18%;top:30%"></span><span class="p" style="left:70%;top:22%"></span><span class="p" style="left:78%;top:66%"></span><span class="p" style="left:34%;top:78%"></span>
+        </div>
+        <p class="dist-now">Matching you within <b id="distNow">no limit</b></p>
+
+        <label for="radiusSelect" class="sr-only">Radius</label>
+        <select id="radiusSelect" class="sr-only">
+          <option value="10">10 km</option>
+          <option value="25">25 km</option>
+          <option value="50">50 km</option>
+          <option value="100">100 km</option>
+          <option value="250">250 km</option>
+          <option value="500">500 km</option>
+          <option value="1000">1000 km</option>
+          <option value="anywhere" selected>Anywhere (no limit)</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <div class="chips" id="chips" role="group" aria-label="Distance">
+          <button type="button" class="chip" data-v="10">10 km</button>
+          <button type="button" class="chip" data-v="25">25 km</button>
+          <button type="button" class="chip" data-v="50">50 km</button>
+          <button type="button" class="chip" data-v="100">100 km</button>
+          <button type="button" class="chip" data-v="250">250 km</button>
+          <button type="button" class="chip" data-v="500">500 km</button>
+          <button type="button" class="chip" data-v="1000">1000 km</button>
+          <button type="button" class="chip" data-v="anywhere">Anywhere</button>
+          <button type="button" class="chip" data-v="custom">Custom</button>
+        </div>
+        <span class="custom-radius" id="customWrap" hidden>
+          <input type="number" id="radiusCustom" min="10" max="20000" step="1" value="10" inputmode="numeric" aria-label="Custom radius in kilometers">
+          <span>km</span>
+        </span>
+
+        <button id="findBtn" class="btn btn-primary">Start talking</button>
+        <p class="age-note">18+ only. By starting, you confirm you are an adult and agree to the <a href="/terms/">Terms</a> and <a href="/privacy/">Privacy Policy</a>.</p>
+        <p id="startError" class="start-error" role="alert" hidden></p>
+        <div id="accNotice" class="start-error acc-notice" role="alert" hidden>
+          <p id="accText"></p>
+          <div class="acc-actions">
+            <button type="button" id="accWiden" class="btn btn-primary"></button>
+            <button type="button" id="accKeep" class="btn btn-ghost">Search anyway</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="call">
+      <div class="stage-col">
+        <div class="call-stage" id="callStage">
+          <div class="video-frame big" id="remoteFrame">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <span class="video-label">Stranger</span>
+            <div class="radar-overlay">
+              <div class="radar" aria-hidden="true">
+                <span class="ring ring-1"></span>
+                <span class="ring ring-2"></span>
+                <span class="ring ring-3"></span>
+                <span class="dot"></span>
+              </div>
+              <p class="overlay-text" id="overlayText">Looking for someone nearby…</p>
+              <p class="overlay-hint" id="searchHint" role="status"></p>
+            </div>
+          </div>
+          <div class="video-frame pip" id="localFrame">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <span class="video-label">You</span>
+          </div>
+        </div>
+        <div class="dock">
+          <span class="dock-note">Drag your small view to move it</span>
+          <div class="dock-btns">
+            <button id="reportBtn" class="btn btn-ghost btn-sm" disabled>Report</button>
+            <button id="skipBtn" class="btn btn-primary btn-sm" disabled>Skip</button>
+            <button id="stopBtn" class="btn btn-ghost btn-sm" disabled>Stop</button>
+          </div>
+        </div>
+      </div>
+      <div class="chatbox">
+        <div class="chat-head">Text chat</div>
+        <div id="chat" class="chat-log"></div>
+        <input id="chatInput" class="chat-input" placeholder="Say something…" disabled>
+      </div>
+    </section>
+
+    <details class="diag" id="diag">
+      <summary>Connection details</summary>
+      <dl id="diagList"></dl>
+    </details>
+  </div>
+</div>
+</main>
+
+<script>
+const statusEl = document.getElementById('status');
+const chatEl = document.getElementById('chat');
+const chatInput = document.getElementById('chatInput');
+const findBtn = document.getElementById('findBtn');
+const stopBtn = document.getElementById('stopBtn');
+const skipBtn = document.getElementById('skipBtn');
+const reportBtn = document.getElementById('reportBtn');
+const radiusSelect = document.getElementById('radiusSelect');
+const customWrap = document.getElementById('customWrap');
+const radiusCustom = document.getElementById('radiusCustom');
+const overlayText = document.getElementById('overlayText');
+const startError = document.getElementById('startError');
+const accNotice = document.getElementById('accNotice');
+const accText = document.getElementById('accText');
+const accWiden = document.getElementById('accWiden');
+const accKeep = document.getElementById('accKeep');
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+
+const UNLIMITED_RADIUS_KM = 20050; // more than half the Earth's circumference, i.e. anywhere
+const MIN_RADIUS_KM = 10;
+const MAX_CUSTOM_RADIUS_KM = 20000;
+const PERMISSION_HINT_MS = 20000; // if the browser has not answered by then, tell the user what to look for
+
+// Instagram, Facebook, Snapchat, TikTok, LinkedIn, WeChat and Android WebView browsers
+const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Snapchat|TikTok|musical_ly|BytedanceWebview|LinkedInApp|MicroMessenger|Twitter|; wv\)/i
+  .test(navigator.userAgent || '');
+const IN_APP_MESSAGE = 'It looks like you opened this inside another app (Instagram, WhatsApp, Facebook and similar). Those built-in browsers often block the camera and location without asking. Open this page in Chrome or Safari instead.';
+const NO_RESPONSE_MESSAGE = 'Still waiting for your browser. Look for a small location or camera icon in the address bar and click Allow. If you opened this link from another app (Instagram, WhatsApp and similar), open it in Chrome or Safari instead.';
+const INSECURE_MESSAGE = 'The camera and location only work on a secure page. Open this site with https:// at the start of the address.';
+const UNSUPPORTED_MESSAGE = 'This browser cannot do video calls. Use a recent version of Chrome, Safari, Edge or Firefox.';
+
+radiusSelect.onchange = () => {
+  customWrap.hidden = radiusSelect.value !== 'custom';
+  if (!customWrap.hidden) radiusCustom.focus();
+};
+
+// Radius in km, or null when the custom box holds something unusable.
+function getRadiusKm() {
+  if (radiusSelect.value === 'anywhere') return UNLIMITED_RADIUS_KM;
+  if (radiusSelect.value !== 'custom') return Number(radiusSelect.value);
+  const typed = Number(radiusCustom.value);
+  if (!Number.isFinite(typed) || typed < MIN_RADIUS_KM) return null;
+  return Math.min(typed, MAX_CUSTOM_RADIUS_KM);
+}
+
+let ws, pc, localStream;
+let lastSearch = null;
+let videoScreening = false;   // the server says whether video screening is switched on
+let frameIntervalMs = 5000;
+let frameTimer = null;
+let frameFirstTimer = null;
+const frameCanvas = document.createElement('canvas');
+
+// Connection handling. The socket can die at any moment (a phone's screen locks, the tab goes to
+// the background, Wi-Fi changes, the server redeploys), so the page reconnects by itself and
+// never sends on a dead socket.
+let reconnectTimer = null;
+let reconnectDelay = 1000;
+let pingTimer = null;
+let pongTimer = null;
+let serverPongs = false;   // only expect replies from a server that says it sends them
+let banned = false;
+let linkTimer = null;        // watches for a video link that never comes up
+const LINK_WAIT_MS = 15000;
+const PING_EVERY_MS = 25000;
+const PONG_WITHIN_MS = 10000;
+const WHERE_EVERY_MS = 8000;      // while waiting, ask how many others are searching
+
+// What the "Connection details" box shows, so a problem can be read off one screenshot.
+const PAGE_VERSION = 'radius build, 11 Oct';
+const searchHint = document.getElementById('searchHint');
+const diagList = document.getElementById('diagList');
+const diag = { server: 'connecting', screening: '', accuracyM: null, radiusKm: null, searching: '', ice: 'no call yet', route: '-', relay: 'checking' };
+
+function fmtDistance(m) {
+  return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+}
+
+function renderDiag() {
+  const rows = [
+    ['Page', PAGE_VERSION],
+    ['Server', diag.server + (diag.screening ? ', ' + diag.screening : '')],
+    ['Your location', diag.accuracyM == null ? 'not read yet' : 'accurate to about ' + fmtDistance(diag.accuracyM)],
+    ['Search radius', diag.radiusKm == null ? '-' : (diag.radiusKm >= UNLIMITED_RADIUS_KM ? 'Anywhere' : diag.radiusKm + ' km')],
+    ['Others searching', diag.searching || '-'],
+    ['Video link', diag.ice],
+    ['Route', diag.route],
+    ['Relay (TURN)', diag.relay],
+  ];
+  diagList.textContent = '';
+  for (const [label, value] of rows) {
+    const dt = document.createElement('dt'); dt.textContent = label;
+    const dd = document.createElement('dd'); dd.textContent = value;
+    diagList.append(dt, dd);
+  }
+}
+
+// Plain-words reason for not having been matched yet, from the server's counts.
+function describeSearch(info) {
+  if (info.total === 0) return 'No one else is searching right now.';
+  const plural = (n, one, many) => (n === 1 ? one : many);
+  if (info.nearby === 0) {
+    let text = info.total + ' other ' + plural(info.total, 'person is', 'people are') + ' searching, but none inside your radius. Try a larger radius or Anywhere.';
+    if (diag.accuracyM != null && diag.accuracyM > 3000) {
+      text += ' Your device says it only knows your location to about ' + fmtDistance(diag.accuracyM) + '.';
+    }
+    return text;
+  }
+  return info.nearby + ' nearby ' + plural(info.nearby, 'person is', 'people are') + ' searching, but their search radius is smaller than the distance between you. They need to widen theirs too.';
+}
+
+function hasTurn(servers) {
+  return servers.some(s => [].concat(s.urls || []).some(u => /^turns?:/i.test(u)));
+}
+
+function relaySummary(seen) {
+  if (seen && seen.has('relay')) return 'working (this device found a relay route)';
+  return hasTurn(ICE_SERVERS)
+    ? 'configured, but this device found no relay route'
+    : 'none set up. Phones on mobile data often cannot reach a laptop on Wi-Fi without one';
+}
+
+async function describeRoute(conn) {
+  try {
+    const stats = await conn.getStats();
+    const byId = {};
+    let pair = null;
+    stats.forEach(r => { byId[r.id] = r; });
+    stats.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId]; });
+    if (!pair) stats.forEach(r => { if (r.type === 'candidate-pair' && r.state === 'succeeded' && (r.nominated || r.selected)) pair = r; });
+    if (!pair || conn !== pc) return;
+    const types = [byId[pair.localCandidateId], byId[pair.remoteCandidateId]].map(c => c && c.candidateType);
+    diag.route = types.includes('relay') ? 'relayed through TURN'
+      : types.every(t => t === 'host') ? 'direct, same network' : 'direct, across networks';
+  } catch (e) { /* this browser does not expose stats */ }
+  renderDiag();
+}
+
+// A per-browser id, not an account. Lets a ban actually mean something across
+// sessions; cleared if the person clears site data, by design, this is not
+// meant to identify anyone, only to let bad actors be turned away faster.
+function getClientId() {
+  let id = localStorage.getItem('nearhi_client_id');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+    localStorage.setItem('nearhi_client_id', id);
+  }
+  return id;
+}
+const IGNORED = (() => { try { return !!localStorage.getItem('nearhi_ignore'); } catch (e) { return false; } })();
+const CLIENT_ID = getClientId(); // where and how far we are searching, reused to find the next person
+let ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // fallback until /ice-servers loads
+
+async function loadIceServers() {
+  try {
+    const res = await fetch('/ice-servers');
+    const servers = await res.json();
+    if (Array.isArray(servers) && servers.length) ICE_SERVERS = servers;
+  } catch (e) {
+    // keep the STUN-only fallback above
+  }
+  diag.relay = relaySummary(null);
+  renderDiag();
+}
+
+// Every few seconds, take a small still of the OTHER person's video and send it to the
+// server for an automatic safety check. The server checks it and throws it away.
+// Screening what we receive (not what we send) is what protects the person watching,
+// because someone running a modified page could simply skip checking their own camera.
+function sendFrame() {
+  if (!socketOpen()) return;
+  if (!document.body.classList.contains('matched')) return;
+  if (!remoteVideo.videoWidth || remoteVideo.readyState < 2) return;
+  const width = 320;
+  const height = Math.max(1, Math.round(width * remoteVideo.videoHeight / remoteVideo.videoWidth));
+  frameCanvas.width = width;
+  frameCanvas.height = height;
+  frameCanvas.getContext('2d').drawImage(remoteVideo, 0, 0, width, height);
+  send({ type: 'frame', data: frameCanvas.toDataURL('image/jpeg', 0.6) });
+}
+
+function startFrameScreening() {
+  stopFrameScreening();
+  if (!videoScreening) return;
+  frameFirstTimer = setTimeout(sendFrame, 2500);           // an early first look, then regular ones
+  frameTimer = setInterval(sendFrame, frameIntervalMs);
+}
+
+function stopFrameScreening() {
+  clearTimeout(frameFirstTimer);
+  clearInterval(frameTimer);
+  frameFirstTimer = frameTimer = null;
+}
+
+function log(msg) {
+  const div = document.createElement('div');
+  div.textContent = msg;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function socketOpen() {
+  return !!ws && ws.readyState === WebSocket.OPEN;
+}
+
+// The one way the page sends anything. Returns false, and sends nothing, if the connection is down.
+function send(payload) {
+  if (!socketOpen()) return false;
+  ws.send(JSON.stringify(payload));
+  return true;
+}
+
+// Whatever we were doing is gone on the server's side, and a call can't survive a dropped
+// connection, so reset it. A search that was in progress is resumed once we reconnect.
+function connectionLost() {
+  clearInterval(pingTimer);
+  clearTimeout(pongTimer);
+  teardownPeer();
+  document.body.classList.remove('matched');
+  skipBtn.disabled = true;
+  reportBtn.disabled = true;
+  statusEl.textContent = 'Connection lost. Reconnecting...';
+  diag.server = 'reconnecting';
+  renderDiag();
+}
+
+function reconnectNow() {
+  if (banned) return;
+  clearTimeout(reconnectTimer);
+  if (!ws || ws.readyState > WebSocket.OPEN) {
+    reconnectDelay = 1000;
+    connect();
+  }
+}
+
+// A socket can look open long after the network killed it. Ask the server to answer, and if
+// it doesn't in time, throw the socket away and start over.
+function checkAlive(withinMs) {
+  if (!socketOpen()) { reconnectNow(); return; }
+  send({ type: 'ping' });
+  if (!serverPongs) return;
+  clearTimeout(pongTimer);
+  pongTimer = setTimeout(() => {
+    const dead = ws;
+    if (dead) { dead.onclose = null; dead.onmessage = null; try { dead.close(); } catch (e) { /* already gone */ } }
+    connectionLost();
+    reconnectDelay = 1000;
+    connect();
+  }, withinMs);
+}
+
+function connect() {
+  clearTimeout(reconnectTimer);
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+
+  ws.onopen = () => {
+    diag.server = 'connected';
+    renderDiag();
+    reconnectDelay = 1000;
+    clearInterval(pingTimer);
+    pingTimer = setInterval(() => checkAlive(PONG_WITHIN_MS), PING_EVERY_MS);
+    if (document.body.classList.contains('active') && lastSearch) {
+      goBackToSearching('Reconnected. Looking for someone nearby...');
+    } else {
+      statusEl.textContent = 'Connected. Hit "Start talking" when you\'re ready.';
+    }
+  };
+  ws.onclose = () => {
+    if (banned) return;
+    connectionLost();
+    reconnectTimer = setTimeout(connect, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+  };
+
+  ws.onmessage = async (event) => {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === 'hello') {
+      videoScreening = !!msg.video_screening;
+      frameIntervalMs = Number(msg.frame_interval_ms) || 5000;
+      serverPongs = !!msg.supports_ping;
+      diag.screening = videoScreening ? 'screening on' : 'screening off';
+      renderDiag();
+    }
+
+    if (msg.type === 'searching') {
+      if (document.body.classList.contains('matched')) return;
+      searchHint.textContent = describeSearch(msg);
+      diag.searching = searchHint.textContent;
+      renderDiag();
+    }
+
+    if (msg.type === 'pong') {
+      clearTimeout(pongTimer);
+    }
+
+    if (msg.type === 'matched') {
+      statusEl.textContent = 'Matched. Say hi!';
+      chatInput.disabled = false;
+      skipBtn.disabled = false;
+      reportBtn.disabled = false;
+      document.body.classList.add('matched');
+      searchHint.textContent = '';
+      diag.searching = 'you were matched';
+      await startPeerConnection(msg.initiator);
+      startFrameScreening();
+
+    }
+
+    if (msg.type === 'signal') {
+      await handleSignal(msg.data);
+    }
+
+    if (msg.type === 'chat') {
+      log('Stranger: ' + msg.data);
+    }
+
+    if (msg.type === 'chat_blocked') {
+      log('Your message was not sent, it did not pass the content check.');
+    }
+
+    if (msg.type === 'peer_left') {
+      goBackToSearching('They left. Looking for someone new...');
+    }
+
+    if (msg.type === 'video_blocked') {
+      goBackToSearching('We ended that call because the video may break the rules. Looking for someone new...');
+    }
+
+    if (msg.type === 'banned') {
+      banned = true;          // do not keep reconnecting after a ban
+      stopEverything();
+      findBtn.disabled = true;
+      showStartError('This device or network has been restricted from NearHi.');
+      statusEl.textContent = 'Restricted.';
+    }
+  };
+}
+
+async function ensureLocalStream() {
+  if (!localStream) {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+  }
+}
+
+async function startPeerConnection(isInitiator) {
+  pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+  await ensureLocalStream();
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+  pc.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
+
+  // Matching can succeed while the video link cannot: two networks that block direct connections
+  // (common between a phone on mobile data and a laptop on Wi-Fi) leave a black frame and, until
+  // now, a status that still said "Matched". Say what is going on instead. Text chat still works,
+  // because it goes through the server.
+  const thisConnection = pc;
+  let linkReported = false;
+  const reportLink = (ok) => { if (!linkReported) { linkReported = true; send({ type: 'link', ok }); } };
+  const linkUp = () => ['connected', 'completed'].includes(thisConnection.iceConnectionState);
+  const linkProblem = () => {
+    if (pc !== thisConnection || linkUp()) return;
+    const note = 'The video link could not be set up. These two networks may be blocking direct video. Text chat still works, or press Skip to try someone else.';
+    statusEl.textContent = 'Matched, but no video link.';
+    reportLink(false);
+    diag.relay = relaySummary(seen);
+    renderDiag();
+    if (!chatEl.textContent.includes('video link could not')) log(note);
+  };
+  const seen = new Set();   // the kinds of route this device could find: host, srflx, relay
+  diag.ice = 'connecting';
+  diag.route = '-';
+  renderDiag();
+
+  thisConnection.oniceconnectionstatechange = () => {
+    if (pc !== thisConnection) return;
+    diag.ice = thisConnection.iceConnectionState;
+    diag.relay = relaySummary(seen);
+    if (linkUp()) { clearTimeout(linkTimer); statusEl.textContent = 'Matched. Say hi!'; reportLink(true); describeRoute(thisConnection); }
+    else if (thisConnection.iceConnectionState === 'failed') { clearTimeout(linkTimer); linkProblem(); }
+    renderDiag();
+  };
+  clearTimeout(linkTimer);
+  linkTimer = setTimeout(linkProblem, LINK_WAIT_MS);
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      const kind = /typ (\w+)/.exec(event.candidate.candidate || '');
+      if (kind) seen.add(kind[1]);
+      send({ type: 'signal', data: { candidate: event.candidate } });
+    }
+  };
+
+  if (isInitiator) {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    send({ type: 'signal', data: { sdp: offer } });
+  }
+}
+
+async function handleSignal(data) {
+  if (!pc) return; // late message from a connection we already closed
+  if (data.sdp) {
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    if (data.sdp.type === 'offer') {
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      send({ type: 'signal', data: { sdp: answer } });
+    }
+  } else if (data.candidate) {
+    try { await pc.addIceCandidate(data.candidate); } catch (e) { /* ignore late candidates */ }
+  }
+}
+
+function teardownPeer() {
+  stopFrameScreening();
+  clearTimeout(linkTimer);
+  if (pc) { pc.close(); pc = null; }
+  remoteVideo.srcObject = null;
+  chatInput.disabled = true;
+}
+
+function stopEverything() {
+  teardownPeer();
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  localVideo.srcObject = null;
+  chatEl.innerHTML = '';
+  searchHint.textContent = '';
+  lastSearch = null;
+  document.body.classList.remove('active', 'matched');
+  stopBtn.disabled = true;
+  skipBtn.disabled = true;
+  reportBtn.disabled = true;
+}
+
+function sendFind() {
+  return !!lastSearch && send({ type: 'find', client_id: CLIENT_ID, ...lastSearch, ...(IGNORED ? { ignore: true } : {}) });
+}
+
+// Drop the current person (if any) and go back to searching on the same screen.
+function goBackToSearching(message) {
+  teardownPeer();
+  chatEl.innerHTML = '';
+  searchHint.textContent = '';
+  document.body.classList.remove('matched');
+  skipBtn.disabled = true;
+  reportBtn.disabled = true;
+  statusEl.textContent = message;
+  sendFind();
+}
+
+function showStartError(message) {
+  startError.textContent = message;
+  startError.hidden = false;
+}
+
+function locationErrorMessage(err) {
+  if (err && err.code === 1) {
+    return 'Location is blocked for this site. Click the icon at the left of the address bar (or the location icon at the right), set Location to Allow, then reload the page.';
+  }
+  if (err && err.code === 3) {
+    return 'Getting your location took too long. Check your connection and try again.';
+  }
+  return 'Your device could not work out where you are. Turn on Location Services for your browser (on a Mac: System Settings, Privacy & Security, Location Services), then reload and try again.';
+}
+
+function cameraErrorMessage(err) {
+  if (err && err.name === 'NotFoundError') return 'No camera or microphone was found on this device.';
+  if (err && err.name === 'NotReadableError') return 'Your camera is being used by another app or tab. Close it and try again.';
+  return 'Camera or microphone is blocked. Click the icon at the left of the address bar, allow both, then reload the page.';
+}
+
+const WIDEN_STEPS_KM = [25, 50, 100, 250, 500, 1000];
+const GEO_PRECISE = { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 };
+const GEO_ORDINARY = { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 };
+
+// Ask for a precise position first (a phone then uses GPS). If that is slow or fails for any reason
+// other than the person saying no, fall back to the ordinary network-based position.
+function readPosition(onOk, onErr) {
+  navigator.geolocation.getCurrentPosition(onOk, (err) => {
+    if (err && err.code === 1) { onErr(err); return; }  // permission denied, no point trying again
+    navigator.geolocation.getCurrentPosition(onOk, onErr, GEO_ORDINARY);
+  }, GEO_PRECISE);
+}
+
+// Smallest preset that clears twice the location error (two devices, each possibly off), or null for Anywhere.
+function widenTarget(accuracyKm) {
+  const need = accuracyKm * 2;
+  for (const km of WIDEN_STEPS_KM) if (km >= need) return km;
+  return null;
+}
+
+function hideAccNotice() { accNotice.hidden = true; }
+
+// The location this device reports is rougher than the radius chosen: say so before searching.
+function askAboutAccuracy(pos, radiusKm, accKm) {
+  const target = widenTarget(accKm);
+  accText.textContent = 'Your device only knows your location to about ' + fmtDistance(accKm * 1000) +
+    ', which is rougher than your ' + radiusKm + ' km radius. You may miss people who are really close to you.';
+  accWiden.textContent = target ? 'Widen to ' + target + ' km' : 'Search anywhere';
+  accWiden.onclick = () => {
+    hideAccNotice();
+    customWrap.hidden = true;
+    radiusSelect.value = target ? String(target) : 'anywhere';
+    startSearch(pos, target || UNLIMITED_RADIUS_KM);
+  };
+  accKeep.onclick = () => { hideAccNotice(); startSearch(pos, radiusKm); };
+  accNotice.hidden = false;
+  statusEl.textContent = 'Your location is only roughly known.';
+  accWiden.focus();
+}
+
+findBtn.onclick = () => {
+  startError.hidden = true;
+  hideAccNotice();
+  if (window.isSecureContext === false) {
+    showStartError(INSECURE_MESSAGE);
+    return;
+  }
+  if (!navigator.geolocation || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
+    showStartError(UNSUPPORTED_MESSAGE);
+    return;
+  }
+  const radiusKm = getRadiusKm();
+  if (radiusKm === null) {
+    showStartError('Enter a radius of at least ' + MIN_RADIUS_KM + ' km.');
+    radiusCustom.focus();
+    return;
+  }
+  if (!socketOpen()) {
+    showStartError('Not connected to the server yet. Reconnecting now, try again in a few seconds.');
+    statusEl.textContent = 'Reconnecting...';
+    reconnectNow();
+    return;
+  }
+  statusEl.textContent = 'Allow location access when your browser asks...';
+  // Some browsers never show the permission prompt and never report an error. Without this the page just sits there.
+  const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
+  readPosition((pos) => {
+    clearTimeout(hintTimer);
+    const accKm = pos.coords.accuracy / 1000;   // NaN if the browser gives no accuracy, which skips the warning
+    if (radiusKm < UNLIMITED_RADIUS_KM && accKm > radiusKm) {
+      askAboutAccuracy(pos, radiusKm, accKm);
+      return;
+    }
+    startSearch(pos, radiusKm);
+  }, (err) => {
+    clearTimeout(hintTimer);
+    statusEl.textContent = 'Could not start.';
+    showStartError(locationErrorMessage(err));
+  });
+};
+
+async function startSearch(pos, radiusKm) {
+  statusEl.textContent = 'Allow camera and microphone access when your browser asks...';
+  const hintTimer = setTimeout(() => showStartError(NO_RESPONSE_MESSAGE), PERMISSION_HINT_MS);
+  try {
+    await ensureLocalStream();
+  } catch (e) {
+    clearTimeout(hintTimer);
+    statusEl.textContent = 'Could not start.';
+    showStartError(cameraErrorMessage(e));
+    return;
+  }
+  clearTimeout(hintTimer);
+  startError.hidden = true;
+  const accuracyM = Number.isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null;
+  lastSearch = {
+    lat: pos.coords.latitude, lon: pos.coords.longitude, radius_km: radiusKm,
+    ...(accuracyM === null ? {} : { accuracy_m: accuracyM }),
+  };
+  diag.accuracyM = pos.coords.accuracy;
+  diag.radiusKm = radiusKm;
+  diag.searching = 'asking the server...';
+  renderDiag();
+  if (!sendFind()) {
+    // the connection dropped while the browser was asking for permissions
+    stopEverything();
+    statusEl.textContent = 'Connection lost.';
+    showStartError('The connection dropped while starting. It is reconnecting, press Start talking again in a few seconds.');
+    return;
+  }
+  const anywhere = radiusKm >= UNLIMITED_RADIUS_KM;
+  overlayText.textContent = anywhere ? 'Looking for someone…' : 'Looking for someone nearby…';
+  statusEl.textContent = anywhere ? 'Searching anywhere...' : 'Searching nearby...';
+  document.body.classList.add('active');
+  stopBtn.disabled = false;
+}
+
+stopBtn.onclick = () => {
+  send({ type: 'skip' });
+  stopEverything();
+  statusEl.textContent = 'Stopped. Hit "Start talking" to search again.';
+};
+
+skipBtn.onclick = () => {
+  send({ type: 'skip' });
+  goBackToSearching('Skipped. Looking for someone new...');
+};
+
+reportBtn.onclick = () => {
+  const sent = send({ type: 'report', reason: 'reported from call' });
+  send({ type: 'skip' });
+  goBackToSearching(sent
+    ? 'Reported. Looking for someone new...'
+    : 'The report could not be sent because the connection dropped. Looking for someone new...');
+};
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && chatInput.value.trim()) {
+    if (send({ type: 'chat', data: chatInput.value })) {
+      log('You: ' + chatInput.value);
+      chatInput.value = '';
+    } else {
+      log('Message not sent, the connection dropped.');
+    }
+  }
+});
+
+renderDiag();
+setInterval(() => {
+  if (document.body.classList.contains('active') && !document.body.classList.contains('matched')) send({ type: 'where' });
+}, WHERE_EVERY_MS);
+loadIceServers();
+connect();
+if (IN_APP_BROWSER) showStartError(IN_APP_MESSAGE);
+
+// Coming back to the tab (phone unlocked), the network returning, or a page restored from the
+// back/forward cache: confirm the connection is really alive instead of trusting how it looks.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkAlive(3000);
+});
+window.addEventListener('online', () => checkAlive(3000));
+window.addEventListener('pageshow', (e) => { if (e.persisted) checkAlive(3000); });
+
+// --- PiP: big/small roles are just CSS classes, the underlying video
+// elements (and their srcObject bindings above) never move in the DOM ---
+const callStage = document.getElementById('callStage');
+const remoteFrame = document.getElementById('remoteFrame');
+const localFrame = document.getElementById('localFrame');
+let swapped = false;
+
+function clearManualPosition(frame) {
+  frame.style.left = '';
+  frame.style.top = '';
+  frame.style.right = '';
+  frame.style.bottom = '';
+}
+
+function applyRoles() {
+  const [bigFrame, pipFrame] = swapped ? [localFrame, remoteFrame] : [remoteFrame, localFrame];
+  clearManualPosition(bigFrame);
+  clearManualPosition(pipFrame);
+  bigFrame.classList.add('big');
+  bigFrame.classList.remove('pip');
+  pipFrame.classList.add('pip');
+  pipFrame.classList.remove('big');
+}
+applyRoles();
+
+let dragFrame = null, dragged = false, pointerStartX = 0, pointerStartY = 0, frameStartX = 0, frameStartY = 0;
+
+function onPipPointerDown(e) {
+  const frame = e.currentTarget;
+  if (!frame.classList.contains('pip')) return; // only the small floating view can be moved
+  dragFrame = frame;
+  dragged = false;
+  const stageRect = callStage.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  frameStartX = frameRect.left - stageRect.left;
+  frameStartY = frameRect.top - stageRect.top;
+  pointerStartX = e.clientX;
+  pointerStartY = e.clientY;
+  frame.setPointerCapture(e.pointerId);
+}
+
+function onPipPointerMove(e) {
+  if (!dragFrame) return;
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragged = true;
+  if (!dragged) return;
+  const stageRect = callStage.getBoundingClientRect();
+  const frameRect = dragFrame.getBoundingClientRect();
+  const maxX = stageRect.width - frameRect.width;
+  const maxY = stageRect.height - frameRect.height;
+  dragFrame.style.left = Math.max(0, Math.min(frameStartX + dx, maxX)) + 'px';
+  dragFrame.style.top = Math.max(0, Math.min(frameStartY + dy, maxY)) + 'px';
+  dragFrame.style.right = 'auto';
+  dragFrame.style.bottom = 'auto';
+}
+
+function onPipPointerUp() {
+  if (!dragFrame) return;
+  const wasDragged = dragged;
+  dragFrame = null;
+  if (!wasDragged) {
+    swapped = !swapped;
+    applyRoles();
+  }
+}
+
+[remoteFrame, localFrame].forEach((frame) => {
+  frame.addEventListener('pointerdown', onPipPointerDown);
+  frame.addEventListener('pointermove', onPipPointerMove);
+  frame.addEventListener('pointerup', onPipPointerUp);
+  frame.addEventListener('pointercancel', onPipPointerUp);
+});
+</script>
+<script>
+// Distance chips drive the hidden #radiusSelect, which the main script reads. Display only.
+(function () {
+  var sel = document.getElementById('radiusSelect');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#chips .chip'));
+  var now = document.getElementById('distNow');
+  var side = document.getElementById('sideDist');
+  var last = null;
+  function label() {
+    if (sel.value === 'anywhere') return 'no limit';
+    if (sel.value === 'custom') {
+      var n = document.getElementById('radiusCustom').value;
+      return (n || '?') + ' km';
+    }
+    return sel.value + ' km';
+  }
+  function sync() {
+    var key = sel.value + '|' + document.getElementById('radiusCustom').value;
+    if (key === last) return;
+    last = key;
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.v === sel.value)); });
+    var t = label();
+    now.textContent = t;
+    side.textContent = t;
+  }
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      sel.value = c.dataset.v;
+      if (sel.onchange) sel.onchange();
+      sync();
+    });
+  });
+  document.getElementById('radiusCustom').addEventListener('input', sync);
+  setInterval(sync, 400); // catches the page widening the radius itself
+  sync();
+})();
+</script>
+</body>
+</html>
