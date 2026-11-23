@@ -2,7 +2,7 @@
 export const faqs = [
   {
     "q": "Is it free?",
-    "a": "Yes. Right now it's free and there's no account to make."
+    "a": "Yes. Right now it's free, and random chat needs no account."
   },
   {
     "q": "Who can see and hear me?",
@@ -27,6 +27,10 @@ export const faqs = [
   {
     "q": "Is it safe?",
     "a": "It's as safe as you make it, like any chat with strangers. You can skip or stop at any moment. Don't share personal details, and leave if anyone makes you uncomfortable. Messages and video are screened automatically and you can report anyone, but no one watches calls live, so the checks are a help, not a guarantee."
+  },
+  {
+    "q": "What are rooms?",
+    "a": "Rooms are group chats with text and video, up to 6 people on video and 30 on text. Anyone can open one, public or link only, and the owner sets the rules and can remove or ban people. Rooms need a free Google sign-in and a username. Random chat does not."
   },
   {
     "q": "Who is it for?",

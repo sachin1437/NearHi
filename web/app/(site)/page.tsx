@@ -14,7 +14,7 @@ import { Footer } from "@/components/site/Footer";
 import "./site.css";
 
 const TITLE = "NearHi: meet new people close to home";
-const SHORT = "Video and text chat with someone new, inside the distance you choose. No account, no profile.";
+const SHORT = "Video and text chat with someone new, inside the distance you choose. No sign-up for random chat.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -42,7 +42,7 @@ const jsonLd = {
       "@id": "https://nearhi.in/#app",
       name: "NearHi",
       url: "https://nearhi.in/",
-      description: "Radius-based random video and text chat. Pick a distance and meet someone new nearby. No account, no profile.",
+      description: "Radius-based random video and text chat. Pick a distance and meet someone new nearby. No sign-up for random chat, plus group rooms.",
       applicationCategory: "SocialNetworkingApplication",
       operatingSystem: "Any (web browser)",
       isAccessibleForFree: true,

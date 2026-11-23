@@ -4,5 +4,7 @@ Disallow: /ws
 Disallow: /ice-servers
 Disallow: /status
 Disallow: /hit
+Disallow: /api/
+Disallow: /auth/
 
 Sitemap: https://nearhi.in/sitemap.xml
