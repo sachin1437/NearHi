@@ -46,11 +46,11 @@ export default function Page() {
 <ul>
   <li>Clearing your browser&apos;s site data gives you a new random ID. This is also how a blocked browser could come back, which is a known limit of having no accounts.</li>
   <li>If you refuse location or camera access, NearHi cannot work, because matching needs your location and calls need your camera.</li>
-  <li>To ask a question, or to ask us to look at a report or block that involves you, write to <a href="mailto:nearhi.in@gmail.com">nearhi.in@gmail.com</a>. Since we hold nothing tied to your identity, we may need the random browser ID to find a record.</li>
+  <li>To ask a question, or to ask us to look at a report or block that involves you, write to <a href="mailto:privacy@nearhi.in">privacy@nearhi.in</a>. Since we hold nothing tied to your identity, we may need the random browser ID to find a record.</li>
 </ul>
 
 <h2>Under 18</h2>
-<p>NearHi is for adults only. We cannot check age, so please do not use it if you are under 18. If you think a minor is using it, tell us at <a href="mailto:nearhi.in@gmail.com">nearhi.in@gmail.com</a>.</p>
+<p>NearHi is for adults only. We cannot check age, so please do not use it if you are under 18. If you think a minor is using it, tell us at <a href="mailto:report@nearhi.in">report@nearhi.in</a>.</p>
 
 <h2>Changes</h2>
 <p>If this page changes, the date at the top will change with it.</p>

@@ -35,7 +35,7 @@ export default function Page() {
 </ul>
 
 <h2>Safety checks and blocking</h2>
-<p>Messages and video stills are checked automatically. We may block a message, end a call, or block a browser or network at any time, with or without notice. The checks are not perfect: they can miss things and can wrongly flag things. If you think you were blocked by mistake, write to <a href="mailto:nearhi.in@gmail.com">nearhi.in@gmail.com</a>.</p>
+<p>Messages and video stills are checked automatically. We may block a message, end a call, or block a browser or network at any time, with or without notice. The checks are not perfect: they can miss things and can wrongly flag things. If you think you were blocked by mistake, write to <a href="mailto:support@nearhi.in">support@nearhi.in</a>.</p>
 
 <h2>Reporting</h2>
 <p>Press Report during a call to flag the other person. We review reports when we can, but no one watches calls live. In an emergency, contact your local emergency services.</p>
@@ -58,7 +58,7 @@ export default function Page() {
 <p>How your information is handled is described in the <a href="/privacy/">Privacy Policy</a>.</p>
 
 <h2>Changes and contact</h2>
-<p>If these terms change, the date at the top will change with it. Questions: <a href="mailto:nearhi.in@gmail.com">nearhi.in@gmail.com</a>.</p>
+<p>If these terms change, the date at the top will change with it. Questions: <a href="mailto:hello@nearhi.in">hello@nearhi.in</a>.</p>
 </main>
 <footer>
   <a href="/">Home</a><a href="/privacy/">Privacy Policy</a><a href="/talk/">Start talking</a>

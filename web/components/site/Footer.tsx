@@ -24,10 +24,10 @@ const columns = [
   {
     title: "Support",
     links: [
-      { label: "nearhi.in@gmail.com", href: "mailto:nearhi.in@gmail.com" },
-      { label: "Get help", href: "mailto:nearhi.in@gmail.com?subject=NearHi%20support" },
-      { label: "Report a problem", href: "mailto:nearhi.in@gmail.com?subject=Report%20a%20problem" },
-      { label: "Blocked by mistake?", href: "mailto:nearhi.in@gmail.com?subject=Blocked%20by%20mistake" },
+      { label: "support@nearhi.in", href: "mailto:support@nearhi.in" },
+      { label: "Get help", href: "mailto:support@nearhi.in?subject=NearHi%20support" },
+      { label: "Report a problem", href: "mailto:report@nearhi.in?subject=Report%20a%20problem" },
+      { label: "Blocked by mistake?", href: "mailto:support@nearhi.in?subject=Blocked%20by%20mistake" },
     ],
   },
   {
@@ -56,13 +56,13 @@ export function Footer() {
             </p>
 
             <a
-              href="mailto:nearhi.in@gmail.com"
+              href="mailto:hello@nearhi.in"
               className="group mt-7 inline-flex items-center gap-2.5 rounded-full border border-white/12 bg-white/[0.055] py-2 pr-4 pl-2 text-[12.5px] text-cream/75 transition-colors hover:border-lime/50 hover:text-cream"
             >
               <span className="grid h-8 w-8 place-items-center rounded-full bg-lime text-ink transition-transform duration-300 group-hover:scale-105">
                 <Mail className="h-4 w-4" aria-hidden="true" />
               </span>
-              Say hi: nearhi.in@gmail.com
+              Say hi: hello@nearhi.in
             </a>
             <p className="mt-4 max-w-xs text-[10.5px] leading-relaxed text-cream/35">
               To report someone during a chat, use the Report button in the call. For adults only,

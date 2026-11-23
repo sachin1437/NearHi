@@ -4,12 +4,12 @@ import Script from "next/script";
 export const metadata: Metadata = {
   metadataBase: new URL("https://nearhi.in"),
   applicationName: "NearHi",
-  icons: {
+    icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2", sizes: "32x32" },
+      { url: "/favicon.svg?v=2", type: "image/svg+xml" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/apple-touch-icon.png?v=2",
   },
 };
 
