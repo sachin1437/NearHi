@@ -463,6 +463,40 @@ async def record_flag(client_id: str):
         await redis_client.incr(FLAGGED_COUNT_PREFIX + client_id)
 
 
+async def send_email(to: str, subject: str, html: str) -> None:
+    """Send one email through Resend. Never raises: a mail problem must not break a chat or a report."""
+    key = os.environ.get("RESEND_API_KEY")
+    if not key:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": "Bearer " + key},
+                json={"from": "NearHi <noreply@nearhi.in>", "to": [to],
+                      "subject": subject, "html": html},
+            )
+    except Exception:
+        pass
+
+
+async def notify_new_report() -> None:
+    """Tell the owner a report came in. At most one email per 10 minutes, so a flood of reports
+    can't spam the inbox or use up the Resend quota. No user text or IDs go into the email."""
+    try:
+        if not await redis_client.set("report_email_cooldown", "1", nx=True, ex=600):
+            return
+        pending = await redis_client.llen(REPORTS_KEY)
+        await send_email(
+            "report@nearhi.in",
+            "NearHi: new report",
+            "<p>New report received. Pending reports: " + str(pending) + ".</p>"
+            "<p>Check /admin/reports.</p>",
+        )
+    except Exception:
+        pass
+
+
 async def record_report(reported: dict, reporter: dict, reason: str, source: str = "user"):
     record = {
         "reported_client_id": reported.get("client_id"),
@@ -474,6 +508,9 @@ async def record_report(reported: dict, reporter: dict, reason: str, source: str
     }
     await redis_client.rpush(REPORTS_KEY, json.dumps(record))
     await redis_client.ltrim(REPORTS_KEY, -MAX_PENDING_REPORTS, -1)
+    task = asyncio.create_task(notify_new_report())
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
 
 
 async def screen_frame(user_id: str, peer_id: str, data_url: str):
