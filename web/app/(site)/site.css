@@ -186,6 +186,14 @@ html[data-theme="dark"] .theme-light {
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 2; }
 
+/* Set by ThemeToggle only while the circular reveal runs. */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+  animation-play-state: paused !important;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

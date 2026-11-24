@@ -61,15 +61,24 @@ export function ThemeToggle({ className }: { className?: string }) {
           Math.max(x, window.innerWidth - x),
           Math.max(y, window.innerHeight - y),
         );
-        const transition = doc.startViewTransition(change);
+        // While the reveal runs, stop every colour transition and looping animation.
+        // Otherwise hundreds of elements fade their colours and the page keeps animating
+        // underneath the snapshot, which is what makes the switch stutter.
+        const root = document.documentElement;
+        root.classList.add("theme-switching");
+        const transition = doc.startViewTransition(change) as {
+          ready: Promise<void>;
+          finished: Promise<void>;
+        };
+        transition.finished.finally(() => root.classList.remove("theme-switching"));
         transition.ready
           .then(() => {
-            document.documentElement.animate(
+            root.animate(
               { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-              { duration: 650, easing: "cubic-bezier(0.22, 1, 0.36, 1)", pseudoElement: "::view-transition-new(root)" },
+              { duration: 450, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
             );
           })
-          .catch(() => {});
+          .catch(() => root.classList.remove("theme-switching"));
       }}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
       aria-pressed={dark}
