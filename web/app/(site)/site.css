@@ -198,6 +198,8 @@ html.theme-switching *::after {
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   body {
@@ -361,5 +363,24 @@ html.theme-switching *::after {
   .reveal {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Phones: lighter rendering and readable mockup text */
+@media (max-width: 639px) {
+  [class*="backdrop-blur-"]:not(header):not(header *) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  [class*="text-[8px]"],
+  [class*="text-[8.5px]"],
+  [class*="text-[9px]"],
+  [class*="text-[9.5px]"] {
+    font-size: 10.5px !important;
+  }
+  img,
+  video,
+  svg {
+    max-width: 100%;
   }
 }

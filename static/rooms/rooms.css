@@ -152,3 +152,12 @@ textarea { resize: vertical; min-height: 84px; }
 body.text-room .stage { display: none; }
 body.text-room .room-body { grid-template-columns: 1fr; }
 body.text-room .room-panel { border-left: 0; max-width: 760px; width: 100%; margin: 0 auto; }
+
+/* Phones: dvh follows the visible height when the browser bar shows or hides. */
+@supports (height: 100dvh) {
+  body, .shell { min-height: 100dvh; }
+  .side { height: 100dvh; }
+  .room-app { height: 100dvh; }
+  .stage.is-fs { height: 100dvh; }
+}
+@media (max-width: 899px) { @supports (height: 100dvh) { .room-app { height: auto; min-height: 100dvh; } } }

@@ -54,7 +54,7 @@ const jsonLd = {
 
 export default function Home() {
   return (
-    <div id="top" className="relative min-h-screen overflow-x-clip bg-paper">
+    <div id="top" className="relative min-h-screen min-h-dvh overflow-x-clip bg-paper">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <noscript>
         <style>{".reveal{opacity:1!important;transform:none!important}.enter-up,.enter-scale{animation:none!important}"}</style>

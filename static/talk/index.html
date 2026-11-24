@@ -186,6 +186,15 @@
     .dbtn-skip, .dbtn-stop { padding: 0; }
     .dbtn .ic { width: 20px; height: 20px; }
   }
+  /* Phones: 100vh is taller than the visible page while the browser bar is showing,
+     so the bottom of the screen got cut off. dvh follows the real visible height. */
+  @supports (height: 100dvh) {
+    body, .app, .shell { min-height: 100dvh; }
+    .side { height: 100dvh; }
+    .call-stage { max-height: calc(100dvh - 150px); }
+    .call-stage:fullscreen, .call-stage.is-fs { height: 100dvh; width: 100vw; }
+    .chat-log { height: calc(100dvh - 290px); }
+  }
 </style>
 <script src="/hit.js" defer></script>
 </head>
