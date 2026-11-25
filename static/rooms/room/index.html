@@ -63,7 +63,11 @@
   </div>
 </div>
 
-<div class="screen" id="screen"><div class="card"><h2 id="sTitle">Joining</h2><p id="sMsg">One moment.</p><div id="sActs" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div></div></div>
+<div class="screen" id="screen"><div class="card"><h2 id="sTitle">Joining</h2><p id="sMsg">One moment.</p>
+  <div id="sConsent" hidden style="text-align:left;margin:0 0 14px">
+    <label class="check"><input type="checkbox" id="sTick"><span>I am 18 or older and I agree to join this room. I understand it is run by its owner, who can remove me, and that people in it can see and hear me. <span id="sNoFilter">Chat here is not filtered, so I may see strong or offensive language.</span><span id="sFilter">Chat language is checked automatically.</span> Camera images are still checked automatically for illegal content. I accept the <a href="/terms/" target="_blank" rel="noopener">Terms</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+  </div>
+  <div id="sActs" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div></div></div>
 
 <script src="/rooms/common.js"></script>
 <script>
@@ -83,7 +87,7 @@
   let reporting = null;
 
   function screen(title, msg, acts) {
-    $('app').hidden = true; $('screen').hidden = false;
+    $('app').hidden = true; $('screen').hidden = false; $('sConsent').hidden = true;
     $('sTitle').textContent = title; $('sMsg').textContent = msg;
     $('sActs').innerHTML = '';
     (acts || [{ label: 'Back to rooms', href: '/rooms/' }]).forEach((a) => {
@@ -210,12 +214,40 @@
     pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed') { try { pc.restartIce(); } catch (e) {} } };
     return p;
   }
-  function addLocal(pc) { if (localStream) localStream.getTracks().forEach((tr) => pc.addTrack(tr, localStream)); }
+  // Turning the camera off really stops it, so the camera light goes out. A blank track keeps the call
+  // connection as it was, so turning the camera back on needs no renegotiation.
+  let blankTrack = null, camBusy = false;
+  function blank() {
+    if (!blankTrack) { const c = document.createElement('canvas'); c.width = c.height = 16; blankTrack = c.captureStream(1).getVideoTracks()[0]; blankTrack.enabled = false; }
+    return blankTrack;
+  }
+  function setSenders(track) {
+    peers.forEach((p) => p.pc.getSenders().forEach((s) => { if (s.track && s.track.kind === 'video') s.replaceTrack(track).catch(() => {}); }));
+  }
+  async function setCam(on) {
+    if (!localStream || !hasCam || camBusy) return;
+    camBusy = true; let failed = false;
+    try {
+      const cur = localStream.getVideoTracks()[0];
+      if (!on) { if (cur) { cur.stop(); localStream.removeTrack(cur); } setSenders(blank()); }
+      else if (!cur) {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        const t = s.getVideoTracks()[0]; localStream.addTrack(t); setSenders(t);
+      }
+    } catch (e) { failed = true; camOn = false; logLine('Could not turn the camera back on.', 'sys'); pushState(); }
+    camBusy = false;
+    if (!failed && !!localStream.getVideoTracks().length !== camOn) setCam(camOn);
+  }
+  function addLocal(pc) {
+    if (!localStream) return;
+    localStream.getAudioTracks().forEach((tr) => pc.addTrack(tr, localStream));
+    if (hasCam) pc.addTrack(localStream.getVideoTracks()[0] || blank(), localStream);
+  }
   async function offerTo(id) {
     const p = makePeer(id);
     if (localStream) addLocal(p.pc);
     if (!localStream || !localStream.getAudioTracks().length) p.pc.addTransceiver('audio', { direction: 'recvonly' });
-    if (!localStream || !localStream.getVideoTracks().length) p.pc.addTransceiver('video', { direction: 'recvonly' });
+    if (!localStream || !hasCam) p.pc.addTransceiver('video', { direction: 'recvonly' });
     const offer = await p.pc.createOffer(); await p.pc.setLocalDescription(offer);
     send({ type: 'signal', to: id, data: { sdp: p.pc.localDescription } });
   }
@@ -262,14 +294,13 @@
   function pushState() {
     if (localStream) {
       localStream.getAudioTracks().forEach((t) => { t.enabled = micOn; });
-      localStream.getVideoTracks().forEach((t) => { t.enabled = camOn; });
     }
     $('micBtn').setAttribute('aria-pressed', String(!micOn)); $('camBtn').setAttribute('aria-pressed', String(!camOn));
     setTileState(myId, { mic: micOn, cam: camOn || !hasCam ? camOn : false });
     send({ type: 'state', mic: micOn, cam: camOn && hasCam });
   }
   $('micBtn').onclick = () => { micOn = !micOn; pushState(); };
-  $('camBtn').onclick = () => { camOn = !camOn; pushState(); };
+  $('camBtn').onclick = () => { camOn = !camOn; pushState(); setCam(camOn); };
 
   /* fullscreen with auto hide */
   const stage = $('stage'); let hideT = null;
@@ -313,7 +344,7 @@
 
   function connect() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(proto + '://' + location.host + '/api/rooms/ws?r=' + encodeURIComponent(roomId));
+    ws = new WebSocket(proto + '://' + location.host + '/api/rooms/ws?r=' + encodeURIComponent(roomId) + '&consent=1');
     ws.onopen = () => { clearInterval(pingTimer); pingTimer = setInterval(() => send({ type: 'ping' }), 25000); };
     ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } handle(m); };
     ws.onclose = () => {
@@ -362,7 +393,7 @@
       case 'request_withdrawn': requests.delete(m.id); renderRequests(); break;
       case 'room_update': room = m.room; renderRoom(); break;
       case 'room_closed':
-        end('Room closed', m.reason === 'closed_by_owner' ? 'The owner closed this room.' : 'The owner left, so the room closed.'); break;
+        end('Room closed', m.reason === 'closed_by_owner' ? 'The owner closed this room.' : 'This room has been closed.'); break;
       case 'kicked':
         end(m.ban ? 'You were banned' : 'You were removed', m.ban ? 'The owner banned you from this room.' : 'The owner removed you from this room. You can try joining again.'); break;
       case 'denied': end('Not let in', 'The owner did not approve your request.'); break;
@@ -375,9 +406,11 @@
           no_room: ['Room not found', 'It was closed or never existed.'],
           room_banned: ['You are banned', 'The owner banned you from this room.'],
           room_locked: ['Room is locked', 'The owner is not letting anyone new in right now.'],
+          consent: ['Consent needed', 'Open the room link again and tick the consent box to join.'],
           room_full: ['Room is full', 'Try again in a moment or pick another room.'],
         };
         if (m.code === 'room_full' && me && me.role === 'owner') { logLine('Room is full, can not let more people in.', 'sys'); break; }
+        if (m.code === 'room_full' && m.max) map.room_full = ['Room is full', m.count + ' of ' + m.max + ' seats are taken right now. Try again in a moment or pick another room.'];
         const e = map[m.code]; if (e) end(e[0], e[1], e[2]); break;
       }
     }
@@ -390,6 +423,24 @@
     if (!acct || acct.needs_profile) { location.replace('/rooms/?next=' + encodeURIComponent(location.pathname + location.search)); return; }
     try { room = (await api('GET', '/api/rooms/' + roomId)).room; }
     catch (e) { screen('Room not found', 'It was closed or never existed.'); return; }
+    const consentKey = 'nh-consent-' + roomId;
+    let consented = false;
+    try { consented = sessionStorage.getItem(consentKey) === '1'; } catch (e) {}
+    if (acct.username !== room.owner && !consented) {
+      await new Promise((resolve) => {
+        screen(room.title, 'Before you join: this room is run by ' + room.owner + '.', [
+          { label: 'Cancel', href: '/rooms/' },
+          { label: 'Join room', primary: true, click: () => {
+            if (!$('sTick').checked) { $('sTick').focus(); $('sMsg').textContent = 'Please tick the box to continue.'; return; }
+            try { sessionStorage.setItem(consentKey, '1'); } catch (e) {}
+            resolve();
+          } },
+        ]);
+        $('sTick').checked = false;
+        $('sNoFilter').hidden = room.filtered !== false; $('sFilter').hidden = room.filtered === false;
+        $('sConsent').hidden = false;
+      });
+    }
     screen(room.title, 'Joining...');
     try { const s = await (await fetch('/ice-servers')).json(); if (Array.isArray(s) && s.length) ICE = s; } catch (e) {}
     window.addEventListener('beforeunload', () => { try { ws && ws.close(); } catch (e) {} });

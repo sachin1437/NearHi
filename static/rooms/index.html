@@ -98,6 +98,18 @@
         <span style="color:var(--muted);font-size:14px">Signed in as <b id="inName"></b></span>
       </div>
 
+      <div id="mine" class="card" style="margin:16px auto 0;max-width:640px" hidden>
+        <div class="tags" id="mineTags"></div>
+        <h2 id="mineTitle" style="margin-top:6px"></h2>
+        <p>Your room stays open until you delete it. If nobody enters it for 10 days, it is removed automatically.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <a class="btn btn-primary" id="mineOpen" href="#">Open my room</a>
+          <button class="btn" id="mineCopy" type="button">Copy invite link</button>
+          <button class="btn" id="mineDel" type="button">Delete room</button>
+        </div>
+        <p class="err" id="mineErr" style="margin:8px 0 0"></p>
+      </div>
+
       <form id="createForm" class="card stack" style="margin-top:16px;max-width:640px" hidden>
         <h2>New room</h2>
         <label class="f">Title<input type="text" id="cTitle" maxlength="60" placeholder="Late night startup ideas"></label>
@@ -114,7 +126,7 @@
             <label><input type="radio" name="cPolicy" value="open" checked> Anyone, instantly</label>
             <label><input type="radio" name="cPolicy" value="approval"> I approve each person</label>
           </div></div>
-        <label class="check"><input type="checkbox" id="cListed" checked><span>List this room publicly so strangers can find it. Untick for a link only room.</span></label>
+        <label class="check"><input type="checkbox" id="cListed" checked><span>List this room publicly so strangers can find it. Untick for a private, link only room. Chat language is filtered in listed rooms and not filtered in private ones.</span></label>
         <p class="err" id="cErr"></p>
         <div style="display:flex;gap:8px"><button class="btn btn-primary" id="cGo" type="submit">Open room</button><button class="btn" id="cCancel" type="button">Cancel</button></div>
         <p class="notice" style="margin:0">Closing the tab for more than a minute closes the room. You are responsible for your room, and everyone can report anyone.</p>
@@ -187,7 +199,19 @@
     timer = setInterval(loadList, 8000);
   }
 
+  let myRoom = null;
+  async function loadMine() {
+    try { myRoom = (await api('GET', '/api/rooms/mine')).room; } catch (e) { return; }
+    $('mine').hidden = !myRoom;
+    $('openCreate').hidden = !!myRoom;
+    if (myRoom) {
+      $('mineTitle').textContent = myRoom.title;
+      $('mineTags').innerHTML = '<span class="tag live">' + (myRoom.mode === 'video' ? 'VIDEO' : 'TEXT') + '</span><span class="tag">' + myRoom.count + '/' + myRoom.max + '</span>';
+      $('mineOpen').href = '/rooms/room/?r=' + encodeURIComponent(myRoom.id);
+    }
+  }
   async function loadList() {
+    loadMine();
     try {
       const { rooms } = await api('GET', '/api/rooms');
       $('empty').hidden = rooms.length > 0;
@@ -197,7 +221,8 @@
           '<span class="tag live">' + (r.mode === 'video' ? 'VIDEO' : 'TEXT') + '</span>' +
           '<span class="tag">' + r.count + '/' + r.max + '</span>' +
           (r.policy === 'approval' ? '<span class="tag violet">APPROVAL</span>' : '') +
-          (r.locked ? '<span class="tag">LOCKED</span>' : '') + '</div>' +
+          (r.locked ? '<span class="tag">LOCKED</span>' : '') +
+          (r.owner_online ? '' : '<span class="tag">OWNER AWAY</span>') + '</div>' +
           '<h3>' + esc(r.title) + '</h3>' +
           '<p>' + (r.rules ? esc(r.rules) : 'No rules set. Be decent.') + '</p>' +
           '<div class="by">Owner: ' + esc(r.owner) + '</div>' +
@@ -262,6 +287,16 @@
   /* Create room */
   const form = $('createForm');
   $('openCreate').onclick = () => { form.hidden = false; $('cTitle').focus(); };
+  $('mineCopy').onclick = async () => {
+    if (!myRoom) return;
+    const link = location.origin + '/rooms/room/?r=' + encodeURIComponent(myRoom.id);
+    try { await navigator.clipboard.writeText(link); $('mineErr').textContent = 'Link copied.'; } catch (e) { $('mineErr').textContent = link; }
+  };
+  $('mineDel').onclick = async () => {
+    if (!myRoom || !confirm('Delete this room for good? Everyone inside is removed and the link stops working.')) return;
+    try { await api('DELETE', '/api/rooms/' + myRoom.id); } catch (e) { $('mineErr').textContent = e.message; return; }
+    myRoom = null; loadList();
+  };
   $('cCancel').onclick = () => { form.hidden = true; };
   function syncMax() {
     const text = form.elements.cMode.value === 'text';

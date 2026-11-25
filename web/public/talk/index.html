@@ -676,6 +676,29 @@ function connect() {
   };
 }
 
+// Turning the camera off really stops it, so the camera light goes out.
+let blankTrack = null;
+function blankVideoTrack() {
+  if (!blankTrack) { const c = document.createElement('canvas'); c.width = c.height = 16; blankTrack = c.captureStream(1).getVideoTracks()[0]; blankTrack.enabled = false; }
+  return blankTrack;
+}
+function replaceVideoTrack(track) {
+  if (!pc) return;
+  pc.getSenders().forEach(s => { if (s.track && s.track.kind === 'video') s.replaceTrack(track).catch(() => {}); });
+}
+async function setCamera(on) {
+  if (!localStream) return false;
+  const cur = localStream.getVideoTracks()[0];
+  if (!on) { if (cur) { cur.stop(); localStream.removeTrack(cur); } replaceVideoTrack(blankVideoTrack()); return true; }
+  if (cur) return true;
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: true });
+    const track = s.getVideoTracks()[0];
+    localStream.addTrack(track); replaceVideoTrack(track);
+    return true;
+  } catch (e) { return false; }
+}
+
 async function ensureLocalStream() {
   if (!localStream) {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -687,7 +710,9 @@ async function startPeerConnection(isInitiator) {
   pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
   await ensureLocalStream();
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  localStream.getAudioTracks().forEach(track => pc.addTrack(track, localStream));
+  // With the camera off there is no camera track, so a blank one keeps the connection shape the same.
+  pc.addTrack(localStream.getVideoTracks()[0] || blankVideoTrack(), localStream);
 
   pc.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
 
@@ -1089,13 +1114,13 @@ function onPipPointerUp() {
 })();
 </script>
 <script>
-// Mic and camera switches. They only flip track.enabled on the stream the main script already opened.
+// Mic and camera switches. The mic is muted in place. The camera is stopped for real, so its light goes out.
 (function () {
   var video = document.getElementById('localVideo');
   var frame = document.getElementById('localFrame');
   var mic = document.getElementById('micBtn');
   var cam = document.getElementById('camBtn');
-  var micOff = false, camOff = false, hadStream = false;
+  var micOff = false, camOff = false, hadStream = false, camBusy = false;
   function setBtn(btn, off, onLabel, offLabel) {
     btn.setAttribute('aria-pressed', String(off));
     btn.setAttribute('aria-label', off ? offLabel : onLabel);
@@ -1112,9 +1137,13 @@ function onPipPointerUp() {
     }
     hadStream = true;
     stream.getAudioTracks().forEach(function (t) { t.enabled = !micOff; });
-    stream.getVideoTracks().forEach(function (t) { t.enabled = !camOff; });
+    if (camOff && stream.getVideoTracks().length) setCamera(false);
+    if (!camOff && !stream.getVideoTracks().length && !camBusy) {
+      camBusy = true;
+      setCamera(true).then(function (ok) { camBusy = false; if (!ok) camOff = true; apply(); });
+    }
     mic.disabled = stream.getAudioTracks().length === 0;
-    cam.disabled = stream.getVideoTracks().length === 0;
+    cam.disabled = false;
     setBtn(mic, micOff, 'Mute microphone', 'Unmute microphone');
     setBtn(cam, camOff, 'Turn camera off', 'Turn camera on');
     frame.classList.toggle('cam-off', camOff);

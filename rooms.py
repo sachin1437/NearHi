@@ -8,6 +8,7 @@ Video is peer to peer: every person connects directly to every other person (a m
 only relays the small setup messages. That is why video rooms are capped at six people.
 """
 
+import logging
 import asyncio
 import json
 import secrets
@@ -22,7 +23,7 @@ ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 MAX_VIDEO_MEMBERS = 6
 MAX_TEXT_MEMBERS = 30
 MAX_ROOMS = 200
-OWNER_GRACE_S = 60                 # a room closes if its owner has been gone this long (covers a page refresh)
+INACTIVE_DAYS = 10                 # a room with nobody in it for this long is deleted
 TITLE_MIN, TITLE_MAX = 3, 60
 RULES_MAX = 500
 CHAT_MAX_CHARS = 1000
@@ -76,6 +77,7 @@ class Room:
         self.pending: dict[str, Member] = {}
         self.bans: set[str] = set()
         self.owner_absent_since: Optional[float] = time.monotonic()
+        self.last_active = time.time()   # last moment anyone was inside
 
     def owner_member(self) -> Optional[Member]:
         return next((m for m in self.members.values() if m.account_id == self.owner_id), None)
@@ -92,6 +94,8 @@ class Room:
             "locked": self.locked,
             "listed": self.listed,
             "owner": self.owner_name,
+            "owner_online": self.owner_member() is not None,
+            "filtered": self.listed,        # public rooms filter chat language, private (unlisted) rooms do not
         }
 
 
@@ -122,10 +126,60 @@ async def drop_member(room: Room, member: Member, payload: Optional[dict], code:
         await broadcast(room, {"type": "member_left", "id": member.id, "reason": (payload or {}).get("type", "left")})
 
 
+async def save_room(room: Room) -> None:
+    await accounts.db(
+        "INSERT OR REPLACE INTO rooms (id, owner_id, owner_name, title, rules, mode, max_members, policy, listed, locked, bans, created, last_active) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (room.id, room.owner_id, room.owner_name, room.title, room.rules, room.mode, room.max, room.policy,
+         int(room.listed), int(room.locked), json.dumps(sorted(room.bans)), room.created, room.last_active),
+    )
+
+
+async def forget_room(room_id: str) -> None:
+    await accounts.db("DELETE FROM rooms WHERE id = ?", (room_id,))
+
+
+async def load_rooms() -> None:
+    """Rooms live until their owner deletes them, so they are read back from the database after a restart."""
+    await accounts.db(
+        "CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, owner_name TEXT NOT NULL, "
+        "title TEXT NOT NULL, rules TEXT NOT NULL, mode TEXT NOT NULL, max_members INTEGER NOT NULL, "
+        "policy TEXT NOT NULL, listed INTEGER NOT NULL, locked INTEGER NOT NULL DEFAULT 0, "
+        "bans TEXT NOT NULL DEFAULT '[]', created REAL NOT NULL, last_active REAL)"
+    )
+    cols = {c["name"] for c in await accounts.db("PRAGMA table_info(rooms)", (), "all")}
+    if "last_active" not in cols:
+        await accounts.db("ALTER TABLE rooms ADD COLUMN last_active REAL")
+    for r in await accounts.db("SELECT * FROM rooms", (), "all"):
+        room = Room(r["id"], r["owner_id"], r["owner_name"], r["title"], r["rules"], r["mode"], r["max_members"],
+                    r["policy"], bool(r["listed"]))
+        room.locked = bool(r["locked"])
+        room.created = r["created"]
+        room.last_active = r["last_active"] or time.time()
+        try:
+            room.bans = set(json.loads(r["bans"]))
+        except ValueError:
+            room.bans = set()
+        rooms[room.id] = room
+
+
+async def reaper() -> None:
+    """Once an hour, delete rooms that have had nobody inside for INACTIVE_DAYS."""
+    while True:
+        now = time.time()
+        for room in list(rooms.values()):
+            if room.members or room.pending:
+                room.last_active = now
+            elif now - room.last_active > INACTIVE_DAYS * 86400:
+                await close_room(room, "inactive")
+        await asyncio.sleep(3600)
+
+
 async def close_room(room: Room, reason: str) -> None:
     if rooms.get(room.id) is not room:
         return
     rooms.pop(room.id, None)
+    await forget_room(room.id)
     for member in list(room.members.values()) + list(room.pending.values()):
         await send(member.ws, {"type": "room_closed", "reason": reason})
         try:
@@ -134,19 +188,6 @@ async def close_room(room: Room, reason: str) -> None:
             pass
     room.members.clear()
     room.pending.clear()
-
-
-async def reaper() -> None:
-    while True:
-        await asyncio.sleep(10)
-        now = time.monotonic()
-        for room in list(rooms.values()):
-            if room.owner_member():
-                room.owner_absent_since = None
-            elif room.owner_absent_since is None:
-                room.owner_absent_since = now
-            elif now - room.owner_absent_since > OWNER_GRACE_S:
-                await close_room(room, "owner_left")
 
 
 def on_account_deleted(account_id: str) -> None:
@@ -175,14 +216,32 @@ async def need_account(request: Request) -> dict:
 
 @router.get("")
 async def list_rooms():
-    live = [r for r in rooms.values() if r.listed and r.owner_member()]
-    live.sort(key=lambda r: (-len(r.members), -r.created))
+    live = [r for r in rooms.values() if r.listed]
+    live.sort(key=lambda r: (not r.owner_member(), -len(r.members), -r.created))
     out = []
     for r in live[:100]:
         meta = r.meta()
         meta["rules"] = meta["rules"][:160]
         out.append(meta)
     return {"rooms": out}
+
+
+@router.get("/mine")
+async def my_room(request: Request):
+    account = await need_account(request)
+    mine = next((r for r in rooms.values() if r.owner_id == account["id"]), None)
+    return {"room": mine.meta() if mine else None}
+
+
+@router.delete("/{room_id}")
+async def delete_room(room_id: str, request: Request):
+    accounts.need_header(request)
+    account = await need_account(request)
+    room = rooms.get(room_id.upper())
+    if not room or room.owner_id != account["id"]:
+        raise HTTPException(status_code=404, detail="That room does not exist")
+    await close_room(room, "closed_by_owner")
+    return {"ok": True}
 
 
 @router.get("/{room_id}")
@@ -207,7 +266,7 @@ async def create_room(request: Request):
 
     mine = next((r for r in rooms.values() if r.owner_id == account["id"]), None)
     if mine:
-        raise HTTPException(status_code=409, detail={"message": "You already have an open room", "room_id": mine.id})
+        raise HTTPException(status_code=409, detail={"message": "You already have a room", "room_id": mine.id})
     if len(rooms) >= MAX_ROOMS:
         raise HTTPException(status_code=503, detail="Too many rooms right now, try again later")
 
@@ -225,12 +284,14 @@ async def create_room(request: Request):
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="bad size")
     max_members = max(2, min(cap, max_members))
-    if not await M.check_message(title) or (rules and not await M.check_message(rules)):
+    listed = bool(body.get("listed", True))
+    if listed and (not await M.check_message(title) or (rules and not await M.check_message(rules))):
         raise HTTPException(status_code=400, detail="The title or rules were not allowed")
 
     room = Room(new_room_id(), account["id"], account["username"], title, rules, mode, max_members, policy,
-                bool(body.get("listed", True)))
+                listed)
     rooms[room.id] = room
+    await save_room(room)
     return {"room": room.meta()}
 
 
@@ -318,12 +379,21 @@ async def room_socket(websocket: WebSocket):
         await websocket.close(code=4403)
         return
 
+    if not is_owner and websocket.query_params.get("consent") != "1":
+        await send(websocket, {"type": "error", "code": "consent"})
+        await websocket.close(code=4403)
+        return
+
     # The same account opening the room again (a refresh, a second tab) replaces the old connection.
     for old in list(room.members.values()) + list(room.pending.values()):
         if old.account_id == account["id"]:
             await drop_member(room, old, {"type": "replaced"}, code=4000)
     if not is_owner and len(room.members) >= room.max:
-        await send(websocket, {"type": "error", "code": "room_full"})
+        logging.getLogger("uvicorn.error").info(
+            "room_full room=%s count=%d max=%d members=%s", room.id, len(room.members), room.max,
+            [m.username for m in room.members.values()],
+        )
+        await send(websocket, {"type": "error", "code": "room_full", "count": len(room.members), "max": room.max})
         await websocket.close(code=4403)
         return
 
@@ -371,7 +441,7 @@ async def room_socket(websocket: WebSocket):
                 if not isinstance(text, str) or not text.strip():
                     continue
                 text = text.strip()[:CHAT_MAX_CHARS]
-                if await M.check_message(text):
+                if not room.listed or await M.check_message(text):   # private rooms: no language filter
                     await broadcast(room, {"type": "chat", "from": member.id, "username": member.username,
                                            "text": text, "ts": time.time()})
                     await M.bump("chats")
@@ -432,6 +502,9 @@ async def room_socket(websocket: WebSocket):
     finally:
         if room.members.get(member.id) is member:
             room.members.pop(member.id, None)
+            room.last_active = time.time()
+            if rooms.get(room.id) is room and not room.members:
+                await save_room(room)
             await broadcast(room, {"type": "member_left", "id": member.id, "reason": "left"})
             if member.account_id == room.owner_id:
                 room.owner_absent_since = time.monotonic()
@@ -449,6 +522,7 @@ async def handle_admin(room: Room, owner: Member, msg: dict) -> None:
         if target and target is not owner:
             if action == "ban":
                 room.bans.add(target.account_id)
+                await save_room(room)
             await drop_member(room, target, {"type": "kicked", "ban": action == "ban"})
     elif action in ("approve", "deny"):
         target = room.pending.get(target_id)
@@ -463,9 +537,11 @@ async def handle_admin(room: Room, owner: Member, msg: dict) -> None:
             await drop_member(room, target, {"type": "denied"}, code=4003)
     elif action in ("lock", "unlock"):
         room.locked = action == "lock"
+        await save_room(room)
         await broadcast(room, {"type": "room_update", "room": room.meta()})
     elif action == "policy" and msg.get("value") in ("open", "approval"):
         room.policy = msg["value"]
+        await save_room(room)
         await broadcast(room, {"type": "room_update", "room": room.meta()})
     elif action == "close":
         await close_room(room, "closed_by_owner")
@@ -481,5 +557,6 @@ def install(app, main_module) -> None:
 
     @app.on_event("startup")
     async def _rooms_startup():
+        await load_rooms()
         task = asyncio.create_task(reaper())
         background.add(task)
