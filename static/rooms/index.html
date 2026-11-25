@@ -224,7 +224,7 @@
           catch (e) { $('outErr').textContent = e.message; }
         },
       });
-      google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with' });
+      google.accounts.id.renderButton($('gbtn'), { theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with' });
     };
     document.head.appendChild(s);
   }

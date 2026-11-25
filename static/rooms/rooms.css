@@ -32,7 +32,7 @@ a { color: var(--violet-dark); text-underline-offset: 3px; }
 .acct { padding: 12px; border: 1px solid var(--line); border-radius: 16px; font-size: 13px; }
 .acct b { display: block; font-size: 14px; word-break: break-all; }
 .acct .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px 32px 40px; max-width: 1100px; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px 32px 40px; max-width: 1100px; margin: 0 auto; width: 100%; }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
 .head .wordmark { padding: 0; }
 .title { font-weight: 700; font-size: clamp(32px, 5vw, 48px); line-height: 1; letter-spacing: -0.045em; margin: 6px 0 10px; text-wrap: balance; }
@@ -173,3 +173,11 @@ body.text-room .room-panel { border-left: 0; max-width: 760px; width: 100%; marg
 .me-list dt { color: var(--muted); }
 .me-list dd { margin: 0; word-break: break-word; }
 textarea { width: 100%; font: inherit; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--field); color: var(--text); resize: vertical; }
+
+/* lobby: centred layout */
+.main .title, .main .sub { text-align: center; margin-left: auto; margin-right: auto; }
+.main > section { width: 100%; }
+.main .narrow, .main #createForm { margin-left: auto; margin-right: auto; }
+.main #vIn > div:first-child { justify-content: center; }
+.main #gbtn { display: flex; justify-content: center; }
+.main #vOut h2, .main #vOut > p, .main #vProfile h2, .main #vProfile > p { text-align: center; }
