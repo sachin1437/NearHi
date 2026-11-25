@@ -67,6 +67,10 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS sessions_account ON sessions(account_id);
             """
         )
+        cols = {r["name"] for r in _db.execute("PRAGMA table_info(accounts)").fetchall()}
+        for col in ("name", "picture", "bio"):
+            if col not in cols:
+                _db.execute(f"ALTER TABLE accounts ADD COLUMN {col} TEXT")
         _db.commit()
 
 
@@ -181,16 +185,25 @@ def _verify_google(credential: str) -> dict:
     return info
 
 
-async def _sign_in(request: Request, response: Response, sub: str, email: str) -> dict:
+def _clean_picture(url: str) -> str:
+    # Only keep Google profile picture URLs, so nothing else can be injected into the page.
+    return url if url.startswith("https://") and ".googleusercontent.com/" in url[:60] and len(url) < 400 else ""
+
+
+async def _sign_in(request: Request, response: Response, sub: str, email: str, name: str = "", picture: str = "") -> dict:
+    name = re.sub(r"\s+", " ", name).strip()[:60]
+    picture = _clean_picture(picture)
     row = await db("SELECT id FROM accounts WHERE google_sub = ?", (sub,), "one")
     if row:
         account_id = row["id"]
-        await db("UPDATE accounts SET email = ? WHERE id = ?", (email, account_id))
+        await db(
+            "UPDATE accounts SET email = ?, name = ?, picture = ? WHERE id = ?", (email, name, picture, account_id)
+        )
     else:
         account_id = secrets.token_hex(8)
         await db(
-            "INSERT INTO accounts (id, google_sub, email, created_at) VALUES (?, ?, ?, ?)",
-            (account_id, sub, email, time.time()),
+            "INSERT INTO accounts (id, google_sub, email, name, picture, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (account_id, sub, email, name, picture, time.time()),
         )
     await _start_session(request, response, account_id)
     row = await db("SELECT id, username, adult_confirmed_at FROM accounts WHERE id = ?", (account_id,), "one")
@@ -212,7 +225,12 @@ async def google_login(request: Request, response: Response):
         info = await asyncio.to_thread(_verify_google, credential)
     except Exception:
         raise HTTPException(status_code=401, detail="Google sign-in could not be verified")
-    return {"account": await _sign_in(request, response, str(info["sub"]), str(info.get("email", "")))}
+    return {
+        "account": await _sign_in(
+            request, response, str(info["sub"]), str(info.get("email", "")),
+            str(info.get("name", "")), str(info.get("picture", "")),
+        )
+    }
 
 
 @router.post("/dev")
@@ -261,6 +279,45 @@ async def set_profile(request: Request):
         raise HTTPException(status_code=409, detail="That username is taken")
     account.update(username=username, adult=True)
     return {"account": public(account)}
+
+
+@router.get("/profile")
+async def get_profile(request: Request):
+    """Everything stored about the signed-in account. Only ever returned to its owner."""
+    account = await current_account(request)
+    if not account:
+        raise HTTPException(status_code=401, detail="sign in first")
+    row = await db(
+        "SELECT username, email, name, picture, bio, created_at FROM accounts WHERE id = ?", (account["id"],), "one"
+    )
+    return {
+        "profile": {
+            "username": row["username"],
+            "email": row["email"],
+            "name": row["name"] or "",
+            "picture": row["picture"] or "",
+            "bio": row["bio"] or "",
+            "created_at": row["created_at"],
+        }
+    }
+
+
+@router.post("/bio")
+async def set_bio(request: Request):
+    need_header(request)
+    account = await current_account(request)
+    if not account:
+        raise HTTPException(status_code=401, detail="sign in first")
+    if not rate_ok("bio:" + account["id"], 6, 0.05):
+        raise HTTPException(status_code=429, detail="slow down")
+    body = await request.json()
+    bio = re.sub(r"\s+", " ", str((body or {}).get("bio", ""))).strip()
+    if len(bio) > 140:
+        raise HTTPException(status_code=400, detail="Keep it under 140 characters")
+    if bio and _moderate and not await _moderate(bio):
+        raise HTTPException(status_code=400, detail="That text is not allowed")
+    await db("UPDATE accounts SET bio = ? WHERE id = ?", (bio, account["id"]))
+    return {"bio": bio}
 
 
 @router.post("/logout")

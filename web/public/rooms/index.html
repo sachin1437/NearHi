@@ -26,9 +26,8 @@
     <a class="side-link" href="/privacy/">Privacy</a>
     <div class="side-foot">
       <div class="acct" id="acctBox" hidden>
-        <b id="acctName"></b>
-        <span style="color:var(--muted)">Signed in</span>
-        <div class="row"><button class="btn btn-sm" id="signOut" type="button">Sign out</button><button class="btn btn-sm" id="delAcct" type="button">Delete account</button></div>
+        <a class="who" href="/rooms/#profile" id="whoLink"><span class="av" id="acctAv"></span><span><b id="acctName"></b><small>View profile</small></span></a>
+        <div class="row"><button class="btn btn-sm" id="signOut" type="button">Sign out</button></div>
       </div>
       <button class="btn btn-sm" id="themeBtn" type="button" style="margin-top:10px;width:100%">Switch theme</button>
     </div>
@@ -66,6 +65,30 @@
         <p class="err" id="pErr"></p>
         <button class="btn btn-primary" id="pGo" type="button">Save and continue</button>
       </div>
+    </section>
+
+    <!-- my profile -->
+    <section id="vMe" class="card narrow" hidden>
+      <div class="me-top">
+        <span class="av av-lg" id="meAv"></span>
+        <div><h2 id="meUser" style="margin:0"></h2><p id="meName" style="margin:2px 0 0"></p></div>
+      </div>
+      <dl class="me-list">
+        <dt>Email</dt><dd id="meEmail"></dd>
+        <dt>Member since</dt><dd id="meSince"></dd>
+        <dt>Sign in</dt><dd>Google. NearHi never sees or stores a password.</dd>
+      </dl>
+      <label class="f" style="margin-top:14px">About you<small>Optional, up to 140 characters. Your email is never shown to anyone.</small>
+        <textarea id="meBio" maxlength="140" rows="3"></textarea></label>
+      <p class="err" id="meErr" style="margin-top:8px"></p>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-primary" id="meSave" type="button">Save</button>
+        <a class="btn" href="/rooms/">Back to rooms</a>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0 16px">
+      <h3 style="margin:0 0 6px;font-size:16px">Delete account</h3>
+      <p>Removes your account, username and sign in sessions, and closes any room you own. This cannot be undone.</p>
+      <button class="btn btn-sm" id="meDel" type="button">Delete my account</button>
     </section>
 
     <!-- signed in -->
@@ -117,16 +140,48 @@
     return n && n.startsWith('/rooms/') && !n.startsWith('//') ? n : null;
   }
   function show(which) {
-    ['vOut', 'vProfile', 'vIn'].forEach((v) => { $(v).hidden = v !== which; });
+    ['vOut', 'vProfile', 'vIn', 'vMe'].forEach((v) => { $(v).hidden = v !== which; });
     $('acctBox').hidden = !account;
-    if (account) { $('acctName').textContent = account.username || 'New account'; $('inName').textContent = account.username || ''; }
+    if (account) {
+      $('acctName').textContent = account.username || 'New account';
+      $('inName').textContent = account.username || '';
+      paintAvatar($('acctAv'), account.username, (profile && profile.picture) || '');
+    }
+  }
+  let profile = null;
+  function paintAvatar(el, name, picture) {
+    el.textContent = '';
+    if (picture) {
+      const img = new Image();
+      img.alt = ''; img.referrerPolicy = 'no-referrer';
+      img.onerror = () => { el.textContent = (name || '?').charAt(0).toUpperCase(); };
+      img.src = picture; el.appendChild(img);
+    } else { el.textContent = (name || '?').charAt(0).toUpperCase(); }
+  }
+  async function loadProfile() {
+    try { profile = (await api('GET', '/auth/profile')).profile; } catch (e) { profile = null; }
+    if (account) paintAvatar($('acctAv'), account.username, profile && profile.picture);
+  }
+  async function showMe() {
+    await loadProfile();
+    if (!profile) { route(); return; }
+    show('vMe');
+    paintAvatar($('meAv'), profile.username, profile.picture);
+    $('meUser').textContent = profile.username;
+    $('meName').textContent = profile.name || '';
+    $('meEmail').textContent = profile.email;
+    $('meSince').textContent = new Date(profile.created_at * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    $('meBio').value = profile.bio || '';
+    $('meErr').textContent = '';
   }
   function route() {
     if (!account) { show('vOut'); return; }
     if (account.needs_profile) { show('vProfile'); return; }
+    if (location.hash === '#profile') { showMe(); return; }
     const n = nextPath();
     if (n) { location.replace(n); return; }
     show('vIn');
+    history.replaceState(null, '', '/rooms/');
     loadList();
     clearInterval(timer);
     timer = setInterval(loadList, 8000);
@@ -190,11 +245,19 @@
     try { await api('POST', '/auth/logout'); } catch (e) {}
     location.reload();
   };
-  $('delAcct').onclick = async () => {
+  $('whoLink').onclick = (e) => { e.preventDefault(); history.replaceState(null, '', '/rooms/#profile'); showMe(); };
+  $('meSave').onclick = async () => {
+    $('meErr').textContent = '';
+    try { const r = await api('POST', '/auth/bio', { bio: $('meBio').value }); $('meBio').value = r.bio; $('meErr').textContent = 'Saved.'; }
+    catch (e) { $('meErr').textContent = e.message; }
+  };
+  window.addEventListener('hashchange', () => { if (account && !account.needs_profile) route(); });
+  async function deleteAccount() {
     if (!confirm('Delete your account and close any room you own? This cannot be undone.')) return;
     try { await api('DELETE', '/auth/me'); } catch (e) { alert(e.message); return; }
-    account = null; clearInterval(timer); show('vOut');
-  };
+    account = null; profile = null; clearInterval(timer); history.replaceState(null, '', '/rooms/'); show('vOut'); initGoogle();
+  }
+  $('meDel').onclick = deleteAccount;
 
   /* Create room */
   const form = $('createForm');
@@ -228,7 +291,7 @@
     try { cfg = await api('GET', '/auth/config'); } catch (e) {}
     $('devBox').hidden = !cfg.dev_login;
     account = await NH.me();
-    if (!account) initGoogle();
+    if (!account) initGoogle(); else await loadProfile();
     route();
   })();
 })();
