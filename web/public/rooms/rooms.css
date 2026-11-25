@@ -181,3 +181,7 @@ textarea { width: 100%; font: inherit; padding: 10px 12px; border-radius: 14px; 
 .main #vIn > div:first-child { justify-content: center; }
 .main #gbtn { display: flex; justify-content: center; }
 .main #vOut h2, .main #vOut > p, .main #vProfile h2, .main #vProfile > p { text-align: center; }
+
+/* lobby polish */
+@media (min-width: 900px) { .main > .head { display: none; } .main { padding-top: 44px; } }
+.main #gbtn { color-scheme: light; min-height: 44px; }
