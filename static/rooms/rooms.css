@@ -90,10 +90,10 @@ textarea { resize: vertical; min-height: 84px; }
 .room-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .room-main { min-width: 0; padding: 14px; display: flex; flex-direction: column; }
 .stage { position: relative; flex: 1; min-height: 0; background: var(--ink); border-radius: 22px; overflow: hidden; }
-.grid { position: absolute; inset: 0; padding: 10px 10px 86px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); grid-auto-rows: 1fr; align-content: center; }
-.grid[data-n="1"] { grid-template-columns: 1fr; }
-.grid[data-n="2"] { grid-template-columns: repeat(2, 1fr); }
-.tile { position: relative; background: #0d0b12; border-radius: 16px; overflow: hidden; min-height: 0; }
+.grid { position: absolute; inset: 0; padding: 10px 10px 86px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); grid-auto-rows: 1fr; align-content: center; }
+.grid[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+.grid[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tile { position: relative; background: #0d0b12; border-radius: 16px; overflow: hidden; min-height: 0; min-width: 0; }
 .tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .tile .who { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; color: #15131b; background: var(--lime); border-radius: 999px; padding: 3px 10px; }
 .tile .avatar { position: absolute; inset: 0; display: none; place-items: center; font-size: 44px; font-weight: 700; color: rgba(255,255,255,.75); background: radial-gradient(circle at 50% 40%, #2c2347, #15131b 70%); }
@@ -185,3 +185,25 @@ textarea { width: 100%; font: inherit; padding: 10px 12px; border-radius: 14px; 
 /* lobby polish */
 @media (min-width: 900px) { .main > .head { display: none; } .main { padding-top: 44px; } }
 .main #gbtn { color-scheme: light; min-height: 44px; }
+
+/* Phones: portrait tiles so faces are not cropped, and nothing wider than the screen. */
+@media (max-width: 899px) {
+  .stage { height: auto; min-height: 60vh; display: flex; flex-direction: column; overflow: clip; }
+  .grid { position: relative; inset: auto; flex: 1; padding: 10px 10px 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; align-content: start; }
+  .grid[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+  .tile { aspect-ratio: 3 / 4; }
+  .grid[data-n="1"] .tile { aspect-ratio: 4 / 5; }
+  .dock { position: sticky; bottom: 12px; left: auto; transform: none; margin: 4px auto 12px; width: max-content; max-width: calc(100% - 20px); }
+  /* Fullscreen: every tile fits on the screen, no scrolling. */
+  .stage.is-fs, .stage:fullscreen { display: block; overflow: hidden; }
+  .stage.is-fs .grid, .stage:fullscreen .grid { position: absolute; inset: 0; padding: 10px 10px 86px; grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
+  .stage.is-fs .grid[data-n="2"], .stage:fullscreen .grid[data-n="2"] { grid-template-columns: minmax(0, 1fr); }
+  .stage.is-fs .tile, .stage:fullscreen .tile, .stage.is-fs .grid[data-n="1"] .tile { aspect-ratio: auto; }
+  /* three or more people: portrait tiles, centred, capped so six still fit */
+  .stage.is-fs .grid[data-n="many"], .stage:fullscreen .grid[data-n="many"] { grid-auto-rows: auto; align-content: center; }
+  .stage.is-fs .grid[data-n="many"] .tile, .stage:fullscreen .grid[data-n="many"] .tile { aspect-ratio: 3 / 4; max-height: calc((100dvh - 120px) / 3); }
+  .stage.is-fs .dock, .stage:fullscreen .dock { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); margin: 0; }
+}
+
+/* Set for a moment while the theme changes, so nothing fades or animates through the switch. */
+html.theme-switching *, html.theme-switching *::before, html.theme-switching *::after { transition: none !important; animation-play-state: paused !important; }

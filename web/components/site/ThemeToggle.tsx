@@ -50,8 +50,14 @@ export function ThemeToggle({ className }: { className?: string }) {
           startViewTransition?: (cb: () => void) => { ready: Promise<void> };
         };
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (!doc.startViewTransition || reduce) {
+        // Phones and tablets skip the animation: snapshotting a whole page is what makes the
+        // switch stutter there. They get a clean instant switch instead.
+        const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        if (!doc.startViewTransition || reduce || !fine) {
+          const root = document.documentElement;
+          root.classList.add("theme-switching");
           change();
+          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
           return;
         }
         const rect = event.currentTarget.getBoundingClientRect();
@@ -75,7 +81,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           .then(() => {
             root.animate(
               { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-              { duration: 450, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
+              { duration: 350, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
             );
           })
           .catch(() => root.classList.remove("theme-switching"));

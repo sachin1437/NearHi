@@ -23,8 +23,11 @@ window.NH = (function () {
   function themeToggle(btn) {
     if (!btn) return;
     btn.addEventListener('click', () => {
-      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
+      const root = document.documentElement;
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.classList.add('theme-switching');
+      root.setAttribute('data-theme', next);
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
       try { localStorage.setItem('nh-theme', next); } catch (e) {}
     });
   }
