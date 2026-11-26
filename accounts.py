@@ -116,9 +116,10 @@ def rate_ok(key: str, capacity: float = 10, refill_per_s: float = 0.2) -> bool:
 
 
 def request_ip(conn: HTTPConnection) -> str:
-    forwarded = conn.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Cloudflare's CF-Connecting-IP. X-Forwarded-For is not trusted: anyone can type it."""
+    cf = (conn.headers.get("cf-connecting-ip") or "").strip()
+    if cf:
+        return cf[:64]
     return conn.client.host if conn.client else "unknown"
 
 
@@ -156,7 +157,8 @@ async def _start_session(request: Request, response: Response, account_id: str) 
         (_hash(token), account_id, time.time() + SESSION_DAYS * 86400),
     )
     await db("DELETE FROM sessions WHERE expires_at < ?", (time.time(),))
-    https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    # Secure everywhere except plain local testing, so the cookie never travels over http by mistake
+    https = (request.url.hostname or "") not in ("localhost", "127.0.0.1")
     response.set_cookie(
         COOKIE_NAME, token, max_age=SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=https, path="/"
     )

@@ -353,6 +353,10 @@ def limiters() -> dict:
 
 @router.websocket("/ws")
 async def room_socket(websocket: WebSocket):
+    await M.guarded_socket(websocket, room_session)
+
+
+async def room_session(websocket: WebSocket):
     await websocket.accept()
     account = await accounts.current_account(websocket)
     if not account or not account["username"] or not account["adult"]:

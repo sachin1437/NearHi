@@ -27,10 +27,13 @@ This is for whoever runs the site. If you just want to use NearHi, go to [nearhi
 | `ADMIN_TOKEN` | No | unset | Password for the admin routes and the `/admin/` page. Without it they return 404 and are disabled. Sent in an `Authorization` header, never in the URL. |
 | `STATS_UTC_OFFSET_MINUTES` | No | `330` (India) | Which time zone the daily reach numbers follow. `330` is IST, `0` is UTC. |
 | `MODERATION_URL` | No | OpenAI's endpoint | Only for testing: points screening at a stand-in server instead of OpenAI. |
+| `ALLOWED_ORIGINS` | No | `https://nearhi.in,https://www.nearhi.in` | Websites allowed to open a WebSocket to the server. Other sites are refused. `localhost` always works for testing. |
+| `MAX_WS_PER_IP` | No | `10` | How many live WebSocket connections one address may hold. |
+| `CSP_ENFORCE` | No | unset | Set to `1` to enforce the Content-Security-Policy. Unset, it only reports problems in the browser console, so nothing can break. |
 
 With no relay provider set, `/ice-servers` just returns Google's public STUN server. That's enough for most home networks but will fail behind stricter NATs and some mobile carriers, so add a TURN provider before relying on this for real users. Check `/status` for `relay_configured`, and open `/ice-servers` to see the real list: you should see several `turn:` entries, not only one `stun:`. If a provider is set but unreachable (wrong key, outage), the server logs a warning once a minute and falls back to STUN so calls still work where they can.
 
-Without `OPENAI_API_KEY` set, chat and video still work, they just aren't screened. This fails open deliberately: a broken moderation call should never be the reason a call stops working. Open `/status` on the live site to confirm what is switched on. It returns `text_screening`, `video_screening`, `ban_salt_set` and `relay_configured`, and the server also prints a warning at startup for anything unset.
+Without `OPENAI_API_KEY` set, chat and video still work, they just aren't screened. This fails open deliberately: a broken moderation call should never be the reason a call stops working. Run `curl -s http://127.0.0.1:8000/status` on the server to confirm what is switched on (calls that came through Cloudflare get a 404). It returns `text_screening`, `video_screening`, `ban_salt_set` and `relay_configured`, and the server also prints a warning at startup for anything unset.
 
 Never commit secrets. `.env` is in `.gitignore`. On the live server they are kept in `/etc/nearhi.env`, readable only by root and the app user.
 
@@ -115,3 +118,7 @@ For the live picture of the whole site, call `GET /admin/stats` with the admin t
 - **Network addresses are visible during a call.** Direct video means each person's browser can see the other's IP address, which roughly reveals a city. Forcing every call through a TURN relay would hide it, at the cost of relaying all video traffic through your provider. The Privacy Policy says this plainly.
 - **The legal pages are a plain-language starting point, not legal advice.** Have a lawyer read them, especially for Indian requirements around platforms (grievance contact) and personal data, before a wide launch. The contact address in both pages is `nearhi.in@gmail.com`; change it there if you ever move it.
 - **Bans aren't unbreakable.** A `client_id` lives in `localStorage` and an IP can change, so someone determined enough can clear site data and switch networks to get a fresh identity. This raises the bar for casual repeat offenders, it doesn't stop a determined one. Nothing short of phone or ID verification does, and that's a much bigger product decision, not a bug fix.
+
+## Network rule the IP checks depend on
+
+The server reads the visitor's address from Cloudflare's `CF-Connecting-IP` header. That is only safe when the EC2 security group accepts web traffic from Cloudflare's IP ranges and nobody else (https://www.cloudflare.com/ips/). Otherwise someone can reach the server directly and type that header themselves, which would let them dodge rate limits and bans.

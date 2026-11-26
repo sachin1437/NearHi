@@ -105,7 +105,39 @@ HOST_NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{0,60}$")
 # Only bots that run JavaScript can reach the visit counter at all; this drops the common ones.
 BOT_AGENT = re.compile(r"bot|crawl|spider|slurp|headless|lighthouse|monitor|uptime|curl|wget|python-requests|httpx", re.I)
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+CSP_ENFORCE = os.environ.get("CSP_ENFORCE") == "1"
+CSP = "; ".join([
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
+    "img-src 'self' data: blob: https://*.googleusercontent.com",
+    "media-src 'self' blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' wss: https://accounts.google.com",
+    "frame-src https://accounts.google.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+])
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    h = response.headers
+    h["X-Content-Type-Options"] = "nosniff"
+    h["X-Frame-Options"] = "DENY"
+    h["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    h["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=(self), payment=(), usb=()"
+    h["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"  # Google sign-in opens a popup
+    h["Content-Security-Policy-Report-Only" if not CSP_ENFORCE else "Content-Security-Policy"] = CSP
+    if request.headers.get("x-forwarded-proto", request.url.scheme) == "https":
+        h["Strict-Transport-Security"] = "max-age=15552000"
+    return response
+
+
 redis_client: Optional["redis.Redis"] = None
 claim_pair_script = None
 
@@ -335,11 +367,59 @@ def hash_ip(ip: str) -> str:
     return hashlib.sha256((BAN_SALT + ip).encode()).hexdigest()
 
 
-def client_ip(websocket: WebSocket) -> str:
-    forwarded = websocket.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return websocket.client.host if websocket.client else "unknown"
+def client_ip(conn) -> str:
+    """The visitor's address. Cloudflare puts it in CF-Connecting-IP. X-Forwarded-For is NOT used,
+    because anyone can type that header themselves. This is only trustworthy while the server's
+    firewall accepts web traffic from Cloudflare alone (see Operating.md)."""
+    cf = (conn.headers.get("cf-connecting-ip") or "").strip()
+    if cf:
+        return cf[:64]
+    return conn.client.host if conn.client else "unknown"
+
+
+# --- WebSocket guards: only our own pages may connect, and one address can only hold a few sockets.
+ALLOWED_ORIGINS = {
+    o.strip().lower().rstrip("/")
+    for o in os.environ.get("ALLOWED_ORIGINS", "https://nearhi.in,https://www.nearhi.in").split(",")
+    if o.strip()
+}
+try:
+    MAX_WS_PER_IP = int(os.environ.get("MAX_WS_PER_IP", "10"))
+except ValueError:
+    MAX_WS_PER_IP = 10
+_ws_per_ip: dict[str, int] = {}
+
+
+def origin_ok(conn) -> bool:
+    """Browsers always send Origin on a WebSocket. A page on another site cannot fake it, so a
+    mismatch means some other website is trying to use our server through a visitor's browser."""
+    origin = (conn.headers.get("origin") or "").strip().lower().rstrip("/")
+    if not origin:
+        return True  # not a browser (a script or tool): the Origin check is only about other websites
+    if origin in ALLOWED_ORIGINS:
+        return True
+    host = (conn.headers.get("host") or "").strip().lower()
+    return bool(host) and origin in (f"https://{host}", f"http://{host}") and host.split(":")[0] in ("localhost", "127.0.0.1")
+
+
+async def guarded_socket(websocket: WebSocket, handler) -> None:
+    """Runs a socket handler after the Origin check and the per-address cap."""
+    if not origin_ok(websocket):
+        await websocket.close(code=1008)
+        return
+    ip = client_ip(websocket)
+    if _ws_per_ip.get(ip, 0) >= MAX_WS_PER_IP:
+        await websocket.close(code=1013)  # try again later
+        return
+    _ws_per_ip[ip] = _ws_per_ip.get(ip, 0) + 1
+    try:
+        await handler(websocket)
+    finally:
+        left = _ws_per_ip.get(ip, 1) - 1
+        if left <= 0:
+            _ws_per_ip.pop(ip, None)
+        else:
+            _ws_per_ip[ip] = left
 
 
 def stats_day(ts: Optional[float] = None) -> str:
@@ -463,40 +543,6 @@ async def record_flag(client_id: str):
         await redis_client.incr(FLAGGED_COUNT_PREFIX + client_id)
 
 
-async def send_email(to: str, subject: str, html: str) -> None:
-    """Send one email through Resend. Never raises: a mail problem must not break a chat or a report."""
-    key = os.environ.get("RESEND_API_KEY")
-    if not key:
-        return
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            await client.post(
-                "https://api.resend.com/emails",
-                headers={"Authorization": "Bearer " + key},
-                json={"from": "NearHi <noreply@nearhi.in>", "to": [to],
-                      "subject": subject, "html": html},
-            )
-    except Exception:
-        pass
-
-
-async def notify_new_report() -> None:
-    """Tell the owner a report came in. At most one email per 10 minutes, so a flood of reports
-    can't spam the inbox or use up the Resend quota. No user text or IDs go into the email."""
-    try:
-        if not await redis_client.set("report_email_cooldown", "1", nx=True, ex=600):
-            return
-        pending = await redis_client.llen(REPORTS_KEY)
-        await send_email(
-            "report@nearhi.in",
-            "NearHi: new report",
-            "<p>New report received. Pending reports: " + str(pending) + ".</p>"
-            "<p>Check /admin/reports.</p>",
-        )
-    except Exception:
-        pass
-
-
 async def record_report(reported: dict, reporter: dict, reason: str, source: str = "user"):
     record = {
         "reported_client_id": reported.get("client_id"),
@@ -508,9 +554,6 @@ async def record_report(reported: dict, reporter: dict, reason: str, source: str
     }
     await redis_client.rpush(REPORTS_KEY, json.dumps(record))
     await redis_client.ltrim(REPORTS_KEY, -MAX_PENDING_REPORTS, -1)
-    task = asyncio.create_task(notify_new_report())
-    background_tasks.add(task)
-    task.add_done_callback(background_tasks.discard)
 
 
 async def screen_frame(user_id: str, peer_id: str, data_url: str):
@@ -539,6 +582,10 @@ async def screen_frame(user_id: str, peer_id: str, data_url: str):
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
+    await guarded_socket(websocket, ws_session)
+
+
+async def ws_session(websocket: WebSocket):
     await websocket.accept()
     user_id = str(uuid.uuid4())
     connections[user_id] = websocket
@@ -783,8 +830,17 @@ async def cloudflare_ice_servers():
     return servers
 
 
+_ice_hits: dict[str, TokenBucket] = {}
+
+
 @app.get("/ice-servers")
-async def ice_servers():
+async def ice_servers(request: Request):
+    # a page loads this once per call, so a generous limit per address still stops hammering
+    if len(_ice_hits) > 20000:
+        _ice_hits.clear()
+    bucket = _ice_hits.setdefault(client_ip(request), TokenBucket(20, 0.2))
+    if not bucket.allow():
+        raise HTTPException(status_code=429, detail="slow down")
     if (CF_TURN_KEY_ID or "").strip() and (CF_TURN_API_TOKEN or "").strip():
         try:
             return await cloudflare_ice_servers()
@@ -872,8 +928,11 @@ async def hit(request: Request):
 
 
 @app.get("/status")
-async def status():
-    """Lets you confirm the safety settings took effect on the live site. Booleans only, nothing secret."""
+async def status(request: Request):
+    """Lets you confirm the safety settings took effect. Only answers calls made on the server itself:
+    anything that came through Cloudflare carries CF-Connecting-IP and gets a 404."""
+    if request.headers.get("cf-connecting-ip"):
+        raise HTTPException(status_code=404)
     return {
         "text_screening": bool(OPENAI_API_KEY),
         "video_screening": bool(OPENAI_API_KEY),
@@ -1015,6 +1074,5 @@ async def talk_redirect():
 import rooms  # noqa: E402
 
 rooms.install(app, sys.modules[__name__])
-
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
