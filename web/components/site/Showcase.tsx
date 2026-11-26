@@ -82,15 +82,15 @@ export function Showcase() {
       className="noise relative scroll-mt-20 overflow-hidden bg-ink py-20 text-cream sm:py-28 lg:py-32"
     >
       <div
-        className="pointer-events-none absolute -top-40 left-1/4 h-[440px] w-[440px] rounded-full bg-violet/25 blur-[110px]"
+        className="pointer-events-none absolute -top-40 left-1/4 h-[440px] w-[440px] rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-violet)_30%,transparent),transparent)]"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute top-1/3 -right-32 h-[380px] w-[380px] rounded-full bg-lime/12 blur-[110px]"
+        className="pointer-events-none absolute top-1/3 -right-32 h-[380px] w-[380px] rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-lime)_16%,transparent),transparent)]"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -bottom-24 -left-24 h-[320px] w-[320px] rounded-full bg-coral/15 blur-[100px]"
+        className="pointer-events-none absolute -bottom-24 -left-24 h-[320px] w-[320px] rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-coral)_20%,transparent),transparent)]"
         aria-hidden="true"
       />
 

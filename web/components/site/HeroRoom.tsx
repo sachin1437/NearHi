@@ -94,9 +94,9 @@ export function HeroRoom() {
 
   return (
     <div className="relative mx-auto w-full max-w-[570px] lg:mx-0 lg:max-w-[590px]">
-      <div className="absolute -top-10 -right-10 h-56 w-56 rounded-full bg-violet/25 blur-3xl" aria-hidden="true" />
-      <div className="absolute -bottom-14 -left-12 h-56 w-56 rounded-full bg-coral/25 blur-3xl" aria-hidden="true" />
-      <div className="absolute top-1/3 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-lime/20 blur-3xl" aria-hidden="true" />
+      <div className="absolute -top-10 -right-10 h-56 w-56 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-violet)_30%,transparent),transparent)]" aria-hidden="true" />
+      <div className="absolute -bottom-14 -left-12 h-56 w-56 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-coral)_30%,transparent),transparent)]" aria-hidden="true" />
+      <div className="absolute top-1/3 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-lime)_24%,transparent),transparent)]" aria-hidden="true" />
 
       <div className="relative">
         <div

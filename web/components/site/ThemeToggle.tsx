@@ -39,17 +39,48 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={() => {
+      onClick={(event) => {
         const next: Theme = dark ? "light" : "dark";
         setTheme(next);
-        // Instant switch. Colour fades and page-wide animations are paused for two frames, so the
-        // whole page changes in a single repaint instead of stuttering through hundreds of fades.
         const root = document.documentElement;
+        const done = () => root.classList.remove("theme-switching");
+        // Colour fades and page-wide animations stay paused while the theme changes, so the wave
+        // only has to reveal one finished repaint instead of animating hundreds of fades.
         root.classList.add("theme-switching");
-        apply(next);
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => root.classList.remove("theme-switching")),
+
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const start = (document as Document & {
+          startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> };
+        }).startViewTransition;
+        if (reduce || !start) {
+          apply(next);
+          requestAnimationFrame(() => requestAnimationFrame(done));
+          return;
+        }
+
+        // Wave origin: the centre of the button that was clicked.
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const radius = Math.hypot(
+          Math.max(x, window.innerWidth - x),
+          Math.max(y, window.innerHeight - y),
         );
+
+        const transition = start.call(document, () => apply(next));
+        transition.ready
+          .then(() => {
+            document.documentElement.animate(
+              { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+              {
+                duration: 600,
+                easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+                pseudoElement: "::view-transition-new(root)",
+              },
+            );
+          })
+          .catch(done);
+        transition.finished.then(done, done);
       }}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
       aria-pressed={dark}

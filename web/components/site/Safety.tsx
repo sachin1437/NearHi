@@ -52,7 +52,7 @@ export function Safety() {
       className="relative scroll-mt-24 overflow-hidden border-y border-fg/7 bg-paper-warm py-20 sm:py-28 lg:py-32"
     >
       <div
-        className="pointer-events-none absolute top-0 right-0 h-72 w-72 rounded-full bg-lilac/70 blur-3xl"
+        className="pointer-events-none absolute top-0 right-0 h-72 w-72 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-lilac)_75%,transparent),transparent)]"
         aria-hidden="true"
       />
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-7 lg:px-10">
@@ -95,7 +95,7 @@ export function Safety() {
               )}
             >
               <div
-                className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-violet/30 blur-3xl"
+                className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklab,var(--color-violet)_36%,transparent),transparent)]"
                 aria-hidden="true"
               />
               <Lock className="h-8 w-8 shrink-0 text-lime/80" aria-hidden="true" strokeWidth={1.4} />
