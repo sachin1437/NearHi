@@ -22,3 +22,7 @@ li { margin-bottom: 8px; }
 footer { padding-top: 40px; padding-bottom: 60px; color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); margin-top: 48px; }
 footer a { margin-right: 18px; }
 main { padding-bottom: 8px; }
+
+/* Tailwind v4 leaves buttons with the default arrow. Show the pointer on anything clickable. */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary, select, label[for] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }

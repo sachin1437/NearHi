@@ -39,52 +39,17 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={(event) => {
+      onClick={() => {
         const next: Theme = dark ? "light" : "dark";
-        const change = () => apply(next);
         setTheme(next);
-
-        // Circular reveal that grows out of the button. Browsers without
-        // View Transitions (or with reduced motion) just switch instantly.
-        const doc = document as Document & {
-          startViewTransition?: (cb: () => void) => { ready: Promise<void> };
-        };
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        // Phones and tablets skip the animation: snapshotting a whole page is what makes the
-        // switch stutter there. They get a clean instant switch instead.
-        const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-        if (!doc.startViewTransition || reduce || !fine) {
-          const root = document.documentElement;
-          root.classList.add("theme-switching");
-          change();
-          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
-          return;
-        }
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        const radius = Math.hypot(
-          Math.max(x, window.innerWidth - x),
-          Math.max(y, window.innerHeight - y),
-        );
-        // While the reveal runs, stop every colour transition and looping animation.
-        // Otherwise hundreds of elements fade their colours and the page keeps animating
-        // underneath the snapshot, which is what makes the switch stutter.
+        // Instant switch. Colour fades and page-wide animations are paused for two frames, so the
+        // whole page changes in a single repaint instead of stuttering through hundreds of fades.
         const root = document.documentElement;
         root.classList.add("theme-switching");
-        const transition = doc.startViewTransition(change) as {
-          ready: Promise<void>;
-          finished: Promise<void>;
-        };
-        transition.finished.finally(() => root.classList.remove("theme-switching"));
-        transition.ready
-          .then(() => {
-            root.animate(
-              { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-              { duration: 350, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
-            );
-          })
-          .catch(() => root.classList.remove("theme-switching"));
+        apply(next);
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => root.classList.remove("theme-switching")),
+        );
       }}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
       aria-pressed={dark}

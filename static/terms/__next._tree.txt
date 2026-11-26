@@ -1,7 +1,7 @@
-:HL["/_next/static/chunks/2wmuv9cgeer5z.css","style"]
+:HL["/_next/static/chunks/0l3yyyu515uda.css","style"]
 :HL["/fonts/bricolage-grotesque-latin-opsz-normal.woff2","font",{"crossOrigin":"anonymous","type":"font/woff2"}]
 :HL["/fonts/fonts.css","style"]
 3:[["children",{"s":"__PAGE__","h":160}]]
 2:[["children",{"s":"terms","h":96,"c":"$Q3"}]]
 1:[["children",{"s":"(legal)","h":96,"c":"$Q2"}]]
-0:{"b":"zxEnOrCX1aFN4Fe6dMO7V","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"0ZOjWrdmOQTdTGc1EMHzo","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

@@ -384,3 +384,7 @@ html.theme-switching *::after {
     max-width: 100%;
   }
 }
+
+/* Tailwind v4 leaves buttons with the default arrow. Show the pointer on anything clickable. */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary, select, label[for] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
