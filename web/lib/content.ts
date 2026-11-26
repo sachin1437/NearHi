@@ -1,10 +1,12 @@
+// Stock photos are served from our own site (web/public/photos), so a visitor's browser never contacts
+// another company just to load the landing page. The helper keeps its old name and arguments so the
+// lists below read the same; the size arguments are ignored because one file per photo is used.
 export const pexels = (
   id: number,
-  width: number,
-  height: number,
+  _width?: number,
+  _height?: number,
   ext: "jpeg" | "png" = "jpeg",
-) =>
-  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.${ext}?auto=compress&cs=tinysrgb&fit=crop&w=${width}&h=${height}`;
+) => `/photos/${id}.${ext === "png" ? "png" : "jpg"}`;
 
 export type Person = {
   name: string;
@@ -95,7 +97,7 @@ export const facts = [
   { name: "Text chat", className: "font-display text-[19px] font-extrabold tracking-[-0.03em]" },
   { name: "PICK YOUR RADIUS", className: "font-display text-[17px] font-medium tracking-[0.28em]" },
   { name: "Skip anytime", className: "font-sans text-[17px] font-bold italic tracking-[-0.03em]" },
-  { name: "NO SIGN-UP TO CHAT", className: "font-sans text-[14px] font-bold tracking-[0.08em]" },
+  { name: "NO ACCOUNT", className: "font-sans text-[14px] font-bold tracking-[0.08em]" },
   { name: "Nothing recorded", className: "font-serif text-[21px] italic" },
   { name: "Adults only", className: "font-display text-[19px] font-bold tracking-[-0.05em]" },
   { name: "In your browser", className: "font-sans text-[17px] font-bold italic tracking-[-0.03em]" },

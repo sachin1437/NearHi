@@ -384,9 +384,9 @@ ALLOWED_ORIGINS = {
     if o.strip()
 }
 try:
-    MAX_WS_PER_IP = int(os.environ.get("MAX_WS_PER_IP", "10"))
+    MAX_WS_PER_IP = int(os.environ.get("MAX_WS_PER_IP", "40"))
 except ValueError:
-    MAX_WS_PER_IP = 10
+    MAX_WS_PER_IP = 40
 _ws_per_ip: dict[str, int] = {}
 
 
@@ -838,7 +838,7 @@ async def ice_servers(request: Request):
     # a page loads this once per call, so a generous limit per address still stops hammering
     if len(_ice_hits) > 20000:
         _ice_hits.clear()
-    bucket = _ice_hits.setdefault(client_ip(request), TokenBucket(20, 0.2))
+    bucket = _ice_hits.setdefault(client_ip(request), TokenBucket(60, 1))
     if not bucket.allow():
         raise HTTPException(status_code=429, detail="slow down")
     if (CF_TURN_KEY_ID or "").strip() and (CF_TURN_API_TOKEN or "").strip():
