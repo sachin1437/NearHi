@@ -231,7 +231,7 @@
       const cur = localStream.getVideoTracks()[0];
       if (!on) { if (cur) { cur.stop(); localStream.removeTrack(cur); } setSenders(blank()); }
       else if (!cur) {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        const s = await navigator.mediaDevices.getUserMedia({ video: camConstraints() });
         const t = s.getVideoTracks()[0]; localStream.addTrack(t); setSenders(t);
       }
     } catch (e) { failed = true; camOn = false; logLine('Could not turn the camera back on.', 'sys'); pushState(); }
@@ -279,9 +279,15 @@
     removeTile(id);
   }
 
+  // Phones are held upright, so ask for a portrait picture there. It matches the portrait tiles.
+  function camConstraints() {
+    return matchMedia('(max-width: 899px)').matches
+      ? { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 } }
+      : { width: 640, height: 480 };
+  }
   async function getMedia() {
     if (room.mode !== 'video') return;
-    try { localStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true }); }
+    try { localStream = await navigator.mediaDevices.getUserMedia({ video: camConstraints(), audio: true }); }
     catch (e) {
       try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); logLine('Camera not available, joined with audio only.', 'sys'); }
       catch (e2) { localStream = null; logLine('No camera or microphone, you can still watch and chat.', 'sys'); }
