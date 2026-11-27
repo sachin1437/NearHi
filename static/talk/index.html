@@ -679,7 +679,20 @@ function connect() {
 // Turning the camera off really stops it, so the camera light goes out.
 let blankTrack = null;
 function blankVideoTrack() {
-  if (!blankTrack) { const c = document.createElement('canvas'); c.width = c.height = 16; blankTrack = c.captureStream(1).getVideoTracks()[0]; blankTrack.enabled = false; }
+  if (!blankTrack) {
+    // A canvas that never changes sends no new frames, so the other side kept showing the last camera
+    // picture. Repaint it twice a second, with one corner pixel nudged, so a "Camera off" frame keeps flowing.
+    const c = document.createElement('canvas'); c.width = 320; c.height = 180;
+    const g = c.getContext('2d'); let tick = 0;
+    const paint = () => {
+      g.fillStyle = '#15131b'; g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = 'rgba(255,255,255,.7)'; g.font = '600 16px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('Camera off', c.width / 2, c.height / 2);
+      g.fillStyle = (tick++ % 2) ? '#15131b' : '#17151e'; g.fillRect(0, 0, 1, 1);
+    };
+    paint(); setInterval(paint, 500);
+    blankTrack = c.captureStream(2).getVideoTracks()[0];
+  }
   return blankTrack;
 }
 function replaceVideoTrack(track) {
